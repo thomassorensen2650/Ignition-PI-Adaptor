@@ -4,6 +4,8 @@ import com.inductiveautomation.ignition.common.BundleUtil;
 import com.inductiveautomation.ignition.common.licensing.LicenseState;
 import com.inductiveautomation.ignition.gateway.model.AbstractGatewayModuleHook;
 import com.inductiveautomation.ignition.gateway.model.GatewayContext;
+import com.unsautomation.ignition.piintegration.PIHistoryProvider;
+import com.unsautomation.ignition.piintegration.PIHistoryProviderSettings;
 import com.unsautomation.ignition.piintegration.PIHistoryProviderType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,7 +23,8 @@ public class GatewayHook extends AbstractGatewayModuleHook {
         piHistoryProviderType = new PIHistoryProviderType();
 
         // Add bundle resource for localization
-        BundleUtil.get().addBundle(PIHistoryProviderType.class);
+        BundleUtil.get().addBundle(PIHistoryProvider.class);
+        BundleUtil.get().addBundle(PIHistoryProviderSettings.class);
 
         // Add PI history provider type
         try {

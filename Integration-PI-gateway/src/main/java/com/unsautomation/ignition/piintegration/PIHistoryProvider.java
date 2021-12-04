@@ -29,7 +29,7 @@ public class PIHistoryProvider implements TagHistoryProvider {
     private String name;
     private GatewayContext context;
     private PIHistoryProviderSettings settings;
-    //private PIHistorySink sink;
+    private PIHistorySink sink;
     private PIQueryClientImpl piClient; // A client for querying data
 
     public PIHistoryProvider(GatewayContext context, String name, PIHistoryProviderSettings settings) {
@@ -42,8 +42,8 @@ public class PIHistoryProvider implements TagHistoryProvider {
     public void startup() {
         try {
             // Create a new data sink with the same name as the provider to store data
-            //sink = new AzureKustoHistorySink(name, context, settings);
-            //context.getHistoryManager().registerSink(sink);
+            sink = new PIHistorySink(name, context, settings);
+            context.getHistoryManager().registerSink(sink);
 
             // Create a PI client
             ConnectToPI();
