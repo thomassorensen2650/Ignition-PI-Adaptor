@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CompilerConfiguration">
+    <annotationProcessing>
+      <profile name="Maven default annotation processors profile" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <module name="Integration-PI-gateway" />
+        <module name="Integration-PI-build" />
+      </profile>
+    </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="Integration-PI-client" target="11" />
+      <module name="Integration-PI-common" target="11" />
+      <module name="Integration-PI-designer" target="11" />
+    </bytecodeTargetLevel>
+  </component>
+</project>
