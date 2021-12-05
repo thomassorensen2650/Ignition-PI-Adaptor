@@ -33,6 +33,7 @@ public class PIHistoryProvider implements TagHistoryProvider {
     private PIQueryClientImpl piClient; // A client for querying data
 
     public PIHistoryProvider(GatewayContext context, String name, PIHistoryProviderSettings settings) {
+        logger.info("CTOR Provider");
         this.name = name;
         this.context = context;
         this.settings = settings;
@@ -41,6 +42,7 @@ public class PIHistoryProvider implements TagHistoryProvider {
     @Override
     public void startup() {
         try {
+            logger.info("Starting Provider");
             // Create a new data sink with the same name as the provider to store data
             sink = new PIHistorySink(name, context, settings);
             context.getHistoryManager().registerSink(sink);
@@ -74,7 +76,7 @@ public class PIHistoryProvider implements TagHistoryProvider {
     public void shutdown() {
         try {
             // Unregister the data sink so it doesn't show up in the list to choose from
-            //context.getHistoryManager().unregisterSink(sink, false);
+            context.getHistoryManager().unregisterSink(sink, false);
         } catch (Throwable e) {
             logger.error("Error shutting down PI history sink", e);
         }
@@ -105,7 +107,7 @@ public class PIHistoryProvider implements TagHistoryProvider {
 
     @Override
     public PIQueryExecutor createQuery(List<ColumnQueryDefinition> tags, QueryController queryController) {
-        logger.debug("createQuery(tags, queryController) called.  tags: " + tags.toString()
+        logger.info("createQuery(tags, queryController) called.  tags: " + tags.toString()
                 + ", queryController: " + queryController.toString());
 
         return new PIQueryExecutor(context, settings, tags, queryController);
@@ -118,7 +120,7 @@ public class PIHistoryProvider implements TagHistoryProvider {
      */
     @Override
     public Results<Result> browse(QualifiedPath qualifiedPath, BrowseFilter browseFilter) {
-        logger.debug("browse(qualifiedPath, browseFilter) called.  qualifiedPath: " + qualifiedPath.toString()
+        logger.info("browse(qualifiedPath, browseFilter) called.  qualifiedPath: " + qualifiedPath.toString()
                 + ", browseFilter: " + (browseFilter == null ? "null" : browseFilter.toString()));
 
         Results<Result> result = new Results<Result>();

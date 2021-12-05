@@ -30,7 +30,7 @@ public class GatewayHook extends AbstractGatewayModuleHook {
         try {
             context.getTagHistoryManager().addTagHistoryProviderType(piHistoryProviderType);
         } catch (Exception ex) {
-            logger.error("Error adding Azure Kusto history provider type", ex);
+            logger.error("Error adding PI history provider type", ex);
         }
     }
 

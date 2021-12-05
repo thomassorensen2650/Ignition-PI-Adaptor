@@ -34,12 +34,11 @@ public class PIHistorySink implements DataSink {
    //private IngestionProperties ingestionProperties;
 
     public PIHistorySink(String pipelineName, GatewayContext context, PIHistoryProviderSettings settings) {
+        logger.info("Starting Sink...:)");
         this.pipelineName = pipelineName;
         this.context = context;
         this.settings = settings;
-
-        logger.debug("Started with Pipeline '" + pipelineName + "'");
-
+        logger.info("Started with Pipeline: '" + pipelineName + "'");
 
     }
 
@@ -50,7 +49,7 @@ public class PIHistorySink implements DataSink {
 
     @Override
     public void startup() {
-        logger.debug("Startup");
+        logger.info("Startup called");
 
 
         /*String clusterURL = settings.getClusterURL();
@@ -109,7 +108,7 @@ public class PIHistorySink implements DataSink {
 
     @Override
     public List<DataSinkInformation> getInfo() {
-        // TODO: Determine the status of the ADX history sink
+        // TODO: Determine the status of the history sink
         return Arrays.asList(new HistorySinkStatus());
     }
 
@@ -123,7 +122,8 @@ public class PIHistorySink implements DataSink {
      */
     @Override
     public void storeData(HistoricalData data) throws IOException  { // TODO Should we fail on error?
-        logger.debug("Received data of type '" + data.getClass().toString() + "'");
+        logger.info("storeData");
+        logger.info("Received data of type '" + data.getClass().toString() + "'");
 
         /* List<AzureKustoTagValue> records = new ArrayList<AzureKustoTagValue>();
 
@@ -160,6 +160,7 @@ public class PIHistorySink implements DataSink {
     }
 
     void ingestRecords(List<Object> records) throws IOException {
+        logger.info("INGRESS");
 
        /* ByteArrayOutputStream bis = new ByteArrayOutputStream();
         GZIPOutputStream gzipOutputStream = new GZIPOutputStream(bis);

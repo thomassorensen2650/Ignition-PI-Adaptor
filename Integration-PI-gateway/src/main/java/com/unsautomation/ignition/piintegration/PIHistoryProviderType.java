@@ -37,6 +37,6 @@ public class PIHistoryProviderType extends TagHistoryProviderType {
 
     @Override
     public boolean supportsStorage() {
-        return false;
+        return true;
     }
 }
