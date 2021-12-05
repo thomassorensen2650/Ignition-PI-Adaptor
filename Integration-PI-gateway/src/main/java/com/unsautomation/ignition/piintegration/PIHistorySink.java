@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.zip.GZIPOutputStream;
 
 /**
- * Responsible for actually storing the data to ADX. Can either use the
+ * Responsible for actually storing the data to PI. Can either use the
  * built-in store & forward system for Ignition or use its own.
  */
 public class PIHistorySink implements DataSink {
@@ -50,7 +50,6 @@ public class PIHistorySink implements DataSink {
     @Override
     public void startup() {
         logger.info("Startup called");
-
 
         /*String clusterURL = settings.getClusterURL();
         String applicationId = settings.getApplicationId();
@@ -122,10 +121,9 @@ public class PIHistorySink implements DataSink {
      */
     @Override
     public void storeData(HistoricalData data) throws IOException  { // TODO Should we fail on error?
-        logger.info("storeData");
         logger.info("Received data of type '" + data.getClass().toString() + "'");
 
-        /* List<AzureKustoTagValue> records = new ArrayList<AzureKustoTagValue>();
+        List<HistoricalTagValue> records = new ArrayList<HistoricalTagValue>();
 
         List<HistoricalData> dataList;
         if (data instanceof DataTransaction) {
@@ -141,26 +139,25 @@ public class PIHistorySink implements DataSink {
                 ScanclassHistorySet dSet = (ScanclassHistorySet) d;
                 logger.debug("Scan class set '" + dSet.getSetName() + "' has '" + dSet.size() + "' tag(s)");
                 for (HistoricalTagValue historicalTagValue : dSet) {
-                    AzureKustoTagValue tagValue = new AzureKustoTagValue(context, historicalTagValue);
-                    logger.trace(tagValue.toString());
-                    records.add(tagValue);
+
+                    records.add(historicalTagValue);
                 }
             } else if (d instanceof HistoricalTagValue) {
                 HistoricalTagValue dValue = (HistoricalTagValue) d;
-                AzureKustoTagValue tagValue = new AzureKustoTagValue(context, dValue);
-                logger.trace(tagValue.toString());
-                records.add(tagValue);
+                records.add(dValue);
             }
         }
-
         ingestRecords(records);
-
-        */
-
     }
 
-    void ingestRecords(List<Object> records) throws IOException {
-        logger.info("INGRESS");
+    void ingestRecords(List<HistoricalTagValue> records) throws IOException {
+        logger.info("INGRESS count:" + records.size());
+
+        // Convert to JSON Object
+
+        // Publish
+
+
 
        /* ByteArrayOutputStream bis = new ByteArrayOutputStream();
         GZIPOutputStream gzipOutputStream = new GZIPOutputStream(bis);

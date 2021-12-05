@@ -101,7 +101,7 @@ public class PIHistoryProvider implements TagHistoryProvider {
 
     @Override
     public TagHistoryProviderInformation getStatusInformation() {
-        return TagHistoryProviderInformation.newBuilder().allowsStorage(false).status(getStatus()).name(getName())
+        return TagHistoryProviderInformation.newBuilder().allowsStorage(true).status(getStatus()).name(getName())
                 .build();
     }
 
@@ -204,7 +204,7 @@ public class PIHistoryProvider implements TagHistoryProvider {
             Date startDate,
             Date endDate,
             String queryId) throws Exception {
-        logger.debug("queryDensity(tags, startDate, endDate, queryId) called.  tags: " + tags.toString()
+        logger.info("queryDensity(tags, startDate, endDate, queryId) called.  tags: " + tags.toString()
                 + ", startDate: " + startDate.toString() + ", endDate: " + endDate.toString() + ", queryId: " + queryId);
 
         ArrayList<Timeline> timelines = new ArrayList<>();
