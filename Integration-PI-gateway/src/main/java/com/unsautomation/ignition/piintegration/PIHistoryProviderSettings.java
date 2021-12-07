@@ -17,12 +17,13 @@ public class PIHistoryProviderSettings extends PersistentRecord {
     public static final ReferenceField<TagHistoryProviderRecord> Profile =
             new ReferenceField<TagHistoryProviderRecord>(META, TagHistoryProviderRecord.META, "Profile", ProfileId);
     public static final StringField PIWebAPIUrl = new StringField(META, "PIWebAPIUrl", SFieldFlags.SMANDATORY).setDefault("https://localhost/piwebapi");
-    public static final BooleanField enableSecurity = new BooleanField(META, "enableSecurity", SFieldFlags.SMANDATORY).setDefault(true);
+    //public static final BooleanField enableSecurity = new BooleanField(META, "enableSecurity", SFieldFlags.SMANDATORY).setDefault(true);
 
-    public static final StringField userName = new StringField(META, "userName", SFieldFlags.SMANDATORY);
-    public static final EncodedStringField password = new EncodedStringField(META, "password", SFieldFlags.SMANDATORY);
+    //public static final StringField userName = new StringField(META, "userName", SFieldFlags.SMANDATORY);
+    //public static final EncodedStringField password = new EncodedStringField(META, "password", SFieldFlags.SMANDATORY);
 
-    public static final StringField AFServer = new StringField(META, "AFServer", SFieldFlags.SMANDATORY);
+
+    //public static final StringField PIArchiver = new StringField(META, "PIArchiver", SFieldFlags.SMANDATORY);
 
 
     public String getWebAPIUrl() {
@@ -30,15 +31,15 @@ public class PIHistoryProviderSettings extends PersistentRecord {
     }
 
     public boolean getEnableSecurity() {
-        return getBoolean(enableSecurity);
+        return false; //getBoolean(enableSecurity);
     }
 
     public String getPassword() {
-        return getString(password);
+        return ""; //getString(password);
     }
 
-    public String getAFServer() {
-        return getString(AFServer);
+    public String getPIArchiver() {
+        return "";//getString(PIArchiver);
     }
 
 

@@ -1,4 +1,5 @@
 package com.unsautomation.ignition.piintegration;
+
 import com.inductiveautomation.ignition.common.StatMetric;
 import com.inductiveautomation.ignition.common.i18n.LocalizedString;
 import com.inductiveautomation.ignition.gateway.history.*;
@@ -6,17 +7,13 @@ import com.inductiveautomation.ignition.gateway.model.GatewayContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
 import java.net.URISyntaxException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.zip.GZIPOutputStream;
 
 /**
  * Responsible for actually storing the data to PI. Can either use the
@@ -36,6 +33,7 @@ public class PIHistorySink implements DataSink {
    //private IngestionProperties ingestionProperties;
 
     public PIHistorySink(String pipelineName, GatewayContext context, PIHistoryProviderSettings settings) {
+        piClient = new PIQueryClientImpl();
         logger.info("Starting Sink...:)");
         this.pipelineName = pipelineName;
         this.context = context;
@@ -122,7 +120,7 @@ public class PIHistorySink implements DataSink {
      * Called from Ignition when tags change and have data available for storage.
      */
     @Override
-    public void storeData(HistoricalData data) throws IOException  { // TODO Should we fail on error?
+    public void storeData(HistoricalData data) throws IOException, InterruptedException, URISyntaxException { // TODO Should we fail on error?
         logger.info("Received data of type '" + data.getClass().toString() + "'");
 
         List<HistoricalTagValue> records = new ArrayList<HistoricalTagValue>();
@@ -149,6 +147,8 @@ public class PIHistorySink implements DataSink {
                 records.add(dValue);
             }
         }
+
+        logger.info("INGEST");
         piClient.ingestRecords(records);
 
     }
