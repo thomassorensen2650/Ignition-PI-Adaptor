@@ -1,25 +1,19 @@
 package com.unsautomation.ignition.piintegration;
-import com.inductiveautomation.ignition.common.QualifiedPath;
-import com.inductiveautomation.ignition.common.WellKnownPathTypes;
-import com.inductiveautomation.ignition.common.model.values.BasicQualifiedValue;
-import com.inductiveautomation.ignition.common.sqltags.model.types.DataQuality;
-import com.inductiveautomation.ignition.common.sqltags.model.types.DataTypeClass;
+
 import com.inductiveautomation.ignition.gateway.model.GatewayContext;
 import com.inductiveautomation.ignition.gateway.sqltags.history.query.ColumnQueryDefinition;
 import com.inductiveautomation.ignition.gateway.sqltags.history.query.HistoryNode;
 import com.inductiveautomation.ignition.gateway.sqltags.history.query.HistoryQueryExecutor;
 import com.inductiveautomation.ignition.gateway.sqltags.history.query.QueryController;
-import com.inductiveautomation.ignition.gateway.sqltags.history.query.columns.ErrorHistoryColumn;
-import com.inductiveautomation.ignition.gateway.sqltags.history.query.columns.ProcessedHistoryColumn;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.sql.Timestamp;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 
 /**
- * Responsible for actually querying the data from ADX. The query controller
+ * Responsible for actually querying the data from PI. The query controller
  * provides the list of tags and settings for querying the data. We can either
  * query for raw data or break up the data into intervals. If we break data up,
  * we can apply an aggregation function against the intervals, such as average.
@@ -44,6 +38,7 @@ public class PIQueryExecutor  implements HistoryQueryExecutor {
         this.settings = settings;
         this.controller = controller;
         this.tagDefs = tagDefs;
+        piClient = new PIQueryClientImpl(settings);
         //this.tags = new HashMap<>();
 
         initTags();
@@ -110,7 +105,7 @@ public class PIQueryExecutor  implements HistoryQueryExecutor {
                 applicationKey,
                 aadTenantId);*/
 
-        piClient = new PIQueryClientImpl();
+
     }
 
     @Override

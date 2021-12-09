@@ -33,7 +33,7 @@ public class PIHistorySink implements DataSink {
    //private IngestionProperties ingestionProperties;
 
     public PIHistorySink(String pipelineName, GatewayContext context, PIHistoryProviderSettings settings) {
-        piClient = new PIQueryClientImpl();
+        piClient = new PIQueryClientImpl(settings);
         logger.info("Starting Sink...:)");
         this.pipelineName = pipelineName;
         this.context = context;
@@ -121,7 +121,7 @@ public class PIHistorySink implements DataSink {
      */
     @Override
     public void storeData(HistoricalData data) throws IOException, InterruptedException, URISyntaxException { // TODO Should we fail on error?
-        logger.info("Received data of type '" + data.getClass().toString() + "'");
+        logger.debug("Received data of type '" + data.getClass().toString() + "'");
 
         List<HistoricalTagValue> records = new ArrayList<HistoricalTagValue>();
 
@@ -147,8 +147,6 @@ public class PIHistorySink implements DataSink {
                 records.add(dValue);
             }
         }
-
-        logger.info("INGEST");
         piClient.ingestRecords(records);
 
     }

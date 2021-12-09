@@ -1,11 +1,14 @@
 package com.unsautomation.ignition.piintegration;
 
 import com.inductiveautomation.ignition.common.QualifiedPath;
+import com.inductiveautomation.ignition.common.QualifiedPathUtils;
 import com.inductiveautomation.ignition.common.WellKnownPathTypes;
-import com.inductiveautomation.ignition.common.browsing.*;
-import com.inductiveautomation.ignition.common.model.values.Quality;
+import com.inductiveautomation.ignition.common.browsing.BrowseFilter;
+import com.inductiveautomation.ignition.common.browsing.Result;
+import com.inductiveautomation.ignition.common.browsing.Results;
+import com.inductiveautomation.ignition.common.browsing.TagResult;
+import com.inductiveautomation.ignition.common.model.values.QualityCode;
 import com.inductiveautomation.ignition.common.sqltags.history.Aggregate;
-//import com.inductiveautomation.ignition.common.sqltags.model.types.TagQuality;
 import com.inductiveautomation.ignition.common.util.Timeline;
 import com.inductiveautomation.ignition.common.util.TimelineSet;
 import com.inductiveautomation.ignition.gateway.model.GatewayContext;
@@ -18,7 +21,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URISyntaxException;
-import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -30,13 +32,14 @@ public class PIHistoryProvider implements TagHistoryProvider {
     private GatewayContext context;
     private PIHistoryProviderSettings settings;
     private PIHistorySink sink;
-    private PIQueryClientImpl piClient; // A client for querying data
+    //private PIQueryClientImpl piClient; // A client for querying data
 
     public PIHistoryProvider(GatewayContext context, String name, PIHistoryProviderSettings settings) {
         logger.info("CTOR Provider");
         this.name = name;
         this.context = context;
         this.settings = settings;
+        //piClient = new PIQueryClientImpl(settings);
     }
 
     @Override
@@ -69,7 +72,6 @@ public class PIHistoryProvider implements TagHistoryProvider {
         //        applicationKey,
         //        aadTenantId);
 
-        piClient = new PIQueryClientImpl();
     }
 
     @Override
@@ -114,19 +116,20 @@ public class PIHistoryProvider implements TagHistoryProvider {
     }
 
     /**
-     * Browses for tags available in ADX. Returns a tree of tags. The function is called several times,
+     * Browses for tags available in PI. Returns a tree of tags. The function is called several times,
      * lazy loading, from a specific starting point.
      * @return
      */
     @Override
     public Results<Result> browse(QualifiedPath qualifiedPath, BrowseFilter browseFilter) {
-        logger.info("browse(qualifiedPath, browseFilter) called.  qualifiedPath: " + qualifiedPath.toString()
+        logger.debug("browse(qualifiedPath, browseFilter) called.  qualifiedPath: " + qualifiedPath.toString()
                 + ", browseFilter: " + (browseFilter == null ? "null" : browseFilter.toString()));
 
-        Results<Result> result = new Results<Result>();
-        /*ArrayList<Result> list = new ArrayList<>();
+        // [Tag Provider]folder/path/tag.property
 
-        // First, we need to find the starting point based on history provider, system name, tag provider, and tag path
+        // qualifiedPath: histprov:HAHAH,
+        // browseFilter: BrowseFilter{allowedTypes=null, nameFilters=null, properties={}, excludeProperties=null, maxResults=-1, offset=-1, continuationPoint='null', recursive=false}
+        ArrayList<Result> list = new ArrayList();
         String histProv = qualifiedPath.getPathComponent(WellKnownPathTypes.HistoryProvider);
         String systemName = null;
         String tagProvider = null;
@@ -137,6 +140,31 @@ public class PIHistoryProvider implements TagHistoryProvider {
             tagProvider = parts[1];
         }
         String tagPath = qualifiedPath.getPathComponent(WellKnownPathTypes.Tag);
+
+        logger.info("provider: '" + histProv +
+                    ",  driver: '" + driver +
+                    "', systemName: '" + systemName +
+                    "', tagProvider: '" + tagProvider +
+                    "', tagPath: '" + tagPath);
+
+        Results<Result> result = new Results<Result>();
+
+        TagResult tagResult = new TagResult();
+        tagResult.setType("tag");
+        tagResult.setHasChildren(false);
+        QualifiedPath fullTagPath = QualifiedPathUtils.toPathFromHistoricalString("[" + histProv + "/default:default]" + "FUCKING TAG");
+        tagResult.setPath(fullTagPath);
+
+        list.add(tagResult);
+        result.setResults(list);
+        result.setResultQuality(QualityCode.Good);
+        // FIXME: First one to implement
+
+        /*ArrayList<Result> list = new ArrayList<>();
+
+        // First, we need to find the starting point based on history provider, system name, tag provider, and tag path
+
+
 
         String query = settings.getTableName();
         if (systemName == null) {

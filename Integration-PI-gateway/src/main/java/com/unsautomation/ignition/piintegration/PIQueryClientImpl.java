@@ -1,7 +1,12 @@
 package com.unsautomation.ignition.piintegration;
 
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.inductiveautomation.ignition.common.QualifiedPath;
+import com.inductiveautomation.ignition.common.browsing.Result;
+import com.inductiveautomation.ignition.common.browsing.Results;
 import com.inductiveautomation.ignition.gateway.history.HistoricalTagValue;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -18,23 +23,27 @@ import java.util.List;
 public class PIQueryClientImpl {
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private PIHistoryProviderSettings settings;
+    private  HttpClient httpClient;
+
+    public PIQueryClientImpl(PIHistoryProviderSettings settings) {
+        this.settings = settings;
+        httpClient  = HttpClient.newBuilder()
+                        .version(HttpClient.Version.HTTP_1_1)
+                        .build();
+    }
+
+
+    Results<Result> queryAF(QualifiedPath path) {
+        return null;
+    }
 
     void ingestRecords(@NotNull List<HistoricalTagValue> records) throws IOException, InterruptedException, URISyntaxException {
 
-        logger.info("Ingest Size: '" + records.size() + "'");
-
-
-            //JsonArray batchRequest = new JsonArray();
-            //batchRequest.add(new JsonObject());
-
-            // Create object graph
-            JsonArray requests = new JsonArray();
-            String gerArchiverUrl = String.format("%s/dataservers/?name=%s", "",""); //settings.getWebAPIUrl(), settings.getPIArchiver());
-            JsonObject getArchiver = buildBatchItem("GetArchiverID", gerArchiverUrl, "GET", "", "");
-            requests.add(getArchiver);
-
-
-
+        // Create object graph
+        JsonArray requests = new JsonArray();
+        String gerArchiverUrl = String.format("%s/dataservers/?name=%s", settings.getWebAPIUrl(), settings.getPIArchiver());
+        JsonObject getArchiver = buildBatchItem("GetArchiverID", gerArchiverUrl, "GET", "", "");
+        requests.add(getArchiver);
 
         if (records.size() > 0) {
             // TODO how much data can one such batch have - maybe we should write straight to blob
@@ -48,7 +57,7 @@ public class PIQueryClientImpl {
                 requests.add(getTag);
 
                 // Value
-                JsonArray tagWrites = new JsonArray(); // TODO: Fixme
+                JsonArray tagWrites = new JsonArray();
                 JsonObject j = new JsonObject();
                 j.addProperty("Value", record.getValue().toString());
                 j.addProperty("Timestamp", record.getTimestamp().toInstant().toString()); //FIXME : Is Epic or Zule the right way to send data
@@ -63,84 +72,54 @@ public class PIQueryClientImpl {
                 requests.add(writeTag);
             }
         }
+        JsonElement response = postBatch(new URI("http://192.168.50.3:1880/test"), requests);
+        if (response != null) {
+            // TODO: Create  Tags
+        }
+    }
 
-        logger.info("HTTP TO GO");
-
+    /***
+     *
+     * @param uri
+     * @param requests
+     * @return
+     * @throws IOException
+     * @throws InterruptedException
+     */
+    private JsonElement postBatch(URI uri, JsonArray requests)  {
         try {
             HttpRequest request = HttpRequest
                     .newBuilder()
-                    .uri(new URI("http://192.168.50.3:1880/test"))
+                    .uri(uri)
                     .headers("Content-Type", "application/json")
                     .POST(HttpRequest.BodyPublishers.ofString(requests.toString()))
                     .build();
 
-
-            HttpResponse<String> response = HttpClient.newBuilder()
-                    .version(HttpClient.Version.HTTP_1_1)
-                    .build()
+            HttpResponse<String> response = httpClient
                     .send(request, HttpResponse.BodyHandlers.ofString());
 
-        } catch (Exception e) {
-            logger.error("LORT", e);
-        }
-        logger.info("HTTP DONE");
-
-
-        // Publish
-
-        // Check result
-
-
-        // Create tags if required
-
-       /* ByteArrayOutputStream bis = new ByteArrayOutputStream();
-        GZIPOutputStream gzipOutputStream = new GZIPOutputStream(bis);
-        OutputStreamWriter outputStreamWriter = new OutputStreamWriter(gzipOutputStream);
-        CsvWriter csvWriter = new CsvWriter(outputStreamWriter, new CsvWriterSettings());
-        // Write as csv stream
-        if (records.size() > 0) {
-            // TODO how much data can one such batch have - maybe we should write straight to blob
-            logger.debug("Logging " + records.size() + " records");
-            for (AzureKustoTagValue record : records) {
-                Object[] recordAsObjects = new Object[8];
-                csvWriter.writeRow();
-                if (record.getTag().getSystemName() != null) recordAsObjects[0] = record.getTag().getSystemName();
-                if (record.getTag().getTagProvider() != null) recordAsObjects[1] = record.getTag().getTagProvider();
-                if (record.getTag().getTagPath() != null) recordAsObjects[2] = record.getTag().getTagPath();
-                Object value = record.getValue();
-                if (value != null) {
-                    ObjectMapper objectMapper = new ObjectMapper();
-                    String valueAsJson = objectMapper.writeValueAsString(value);
-                    recordAsObjects[3] = valueAsJson;
-
-                    if (value instanceof Double || value instanceof Float) {
-                        recordAsObjects[4] = value;
-                    } else if (value instanceof Boolean || value instanceof Byte || value instanceof Short || value instanceof Integer || value instanceof Long) {
-                        recordAsObjects[4] = value;
-                        recordAsObjects[5] = value;
-                    }
-                }
-
-                if (record.getTimestamp() != null) {
-                    String formattedDate = simpleDateFormat.format(record.getTimestamp());
-                    recordAsObjects[6] = formattedDate;
-                }
-                if (record.getQuality() != null) recordAsObjects[7] = record.getQuality();
-                csvWriter.writeRow(recordAsObjects);
+            if (response.statusCode() < 300 && response.statusCode() >= 200) {
+                // Success
+                return JsonParser.parseString(response.body());
             }
+            logger.error("Invalid Response Code '" + response.statusCode() +  "' Error: " + response.body());
+            return null;
+
+        } catch (Exception e) {
+            logger.error("Unable to send HTTP Request", e);
+            return null;
         }
-        csvWriter.flush();
-        gzipOutputStream.finish();
-        gzipOutputStream.close();
-        StreamSourceInfo streamSourceInfo = new StreamSourceInfo(new ByteArrayInputStream(bis.toByteArray()), false);
-        streamSourceInfo.setCompressionType(CompressionType.gz);
-        gzipOutputStream.finish();
-        gzipOutputStream.close();
-        // Can change here to streaming
-        queuedClient.ingestFromStream(streamSourceInfo, ingestionProperties);
-        */
     }
 
+    /***
+     *
+     * @param name
+     * @param resource
+     * @param method
+     * @param parentId
+     * @param parameter
+     * @return
+     */
     private JsonObject buildBatchItem(String name, String resource, String method, String parentId, String parameter) {
         JsonObject rtn = new JsonObject();
         JsonObject inner = new JsonObject();
