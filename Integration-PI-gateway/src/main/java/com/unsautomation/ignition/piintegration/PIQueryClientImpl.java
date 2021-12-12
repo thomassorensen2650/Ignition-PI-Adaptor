@@ -22,8 +22,8 @@ import java.util.List;
 
 public class PIQueryClientImpl {
     private final Logger logger = LoggerFactory.getLogger(getClass());
-    private PIHistoryProviderSettings settings;
-    private  HttpClient httpClient;
+    private final PIHistoryProviderSettings settings;
+    private final HttpClient httpClient;
 
     public PIQueryClientImpl(PIHistoryProviderSettings settings) {
         this.settings = settings;
@@ -33,7 +33,7 @@ public class PIQueryClientImpl {
     }
 
 
-    Results<Result> queryAF(QualifiedPath path) {
+    Results<Result> query(QualifiedPath path) {
         return null;
     }
 

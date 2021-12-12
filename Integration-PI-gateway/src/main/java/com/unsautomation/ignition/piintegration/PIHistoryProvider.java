@@ -142,20 +142,44 @@ public class PIHistoryProvider implements TagHistoryProvider {
         String tagPath = qualifiedPath.getPathComponent(WellKnownPathTypes.Tag);
 
         logger.info("provider: '" + histProv +
-                    ",  driver: '" + driver +
-                    "', systemName: '" + systemName +
-                    "', tagProvider: '" + tagProvider +
-                    "', tagPath: '" + tagPath);
+                ",  driver: '" + driver +
+                "', systemName: '" + systemName +
+                "', tagProvider: '" + tagProvider +
+                "', tagPath: '" + tagPath);
 
         Results<Result> result = new Results<Result>();
 
-        TagResult tagResult = new TagResult();
-        tagResult.setType("tag");
-        tagResult.setHasChildren(false);
-        QualifiedPath fullTagPath = QualifiedPathUtils.toPathFromHistoricalString("[" + histProv + "/default:default]" + "FUCKING TAG");
-        tagResult.setPath(fullTagPath);
 
-        list.add(tagResult);
+        if (systemName == null) {
+            // Query Top Level
+            TagResult af = new TagResult();
+            af.setType("tag");
+            af.setHasChildren(true);
+            QualifiedPath fullTagPath = QualifiedPathUtils.toPathFromHistoricalString("[" + histProv + "/pi:default]");
+            af.setPath(fullTagPath);
+            list.add(af);
+
+            TagResult pi = new TagResult();
+            pi.setType("tag");
+            pi.setHasChildren(true);
+            QualifiedPath fullTagPath2 = QualifiedPathUtils.toPathFromHistoricalString("[" + histProv + "/pi:default]");
+            pi.setPath(fullTagPath2);
+
+
+            list.add(pi);
+
+        } else {
+            TagResult pi = new TagResult();
+            pi.setType("tag");
+            pi.setHasChildren(false);
+            QualifiedPath fullTagPath = QualifiedPathUtils.toPathFromHistoricalString("[" + histProv + "/pi:default]TEST");
+            pi.setPath(fullTagPath);
+            list.add(pi);
+        }
+
+
+
+
         result.setResults(list);
         result.setResultQuality(QualityCode.Good);
         // FIXME: First one to implement

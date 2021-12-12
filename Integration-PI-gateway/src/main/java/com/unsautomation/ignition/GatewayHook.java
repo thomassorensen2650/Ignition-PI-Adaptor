@@ -10,8 +10,6 @@ import com.unsautomation.ignition.piintegration.PIHistoryProviderType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.sql.SQLException;
-
 public class GatewayHook extends AbstractGatewayModuleHook {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
@@ -23,11 +21,6 @@ public class GatewayHook extends AbstractGatewayModuleHook {
         this.context = gatewayContext;
 
         piHistoryProviderType = new PIHistoryProviderType();
-
-        // Add bundle resource for localization
-        BundleUtil.get().addBundle(PIHistoryProvider.class);
-        BundleUtil.get().addBundle(PIHistoryProviderSettings.class);
-
 
 
         // Add PI history provider type
@@ -41,14 +34,19 @@ public class GatewayHook extends AbstractGatewayModuleHook {
     @Override
     public void startup(LicenseState licenseState) {
 
+        BundleUtil.get().addBundle(PIHistoryProvider.class);
+        BundleUtil.get().addBundle(PIHistoryProviderSettings.class);
+
+
     }
 
     @Override
     public void shutdown() {
         // Remove bundle resource
-        BundleUtil.get().removeBundle(PIHistoryProviderType.class);
+        BundleUtil.get().removeBundle(PIHistoryProvider.class);
+        BundleUtil.get().removeBundle(PIHistoryProviderSettings.class);
 
-        // Remove PI b history provider type
+        // Remove PI history provider type
         try {
             context.getTagHistoryManager().removeTagHistoryProviderType(piHistoryProviderType);
         } catch (Exception ex) {
