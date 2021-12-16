@@ -20,7 +20,7 @@ public class PIHistoryProviderSettings extends PersistentRecord {
     // Connection
     public static final StringField PIWebAPIUrl; // Url for the PI Web API
     public static final StringField PIServer; // PI Server where data will be stored
-    public static final BooleanField useBasicAuthentication;
+    //public static final BooleanField useBasicAuthentication; // Disabled, I dont think you can use without Basic Authentication
     public static final StringField Username;
     public static final EncodedStringField Password;
 
@@ -64,7 +64,7 @@ public class PIHistoryProviderSettings extends PersistentRecord {
         Profile.getFormMeta().setVisible(false);
 
         PIWebAPIUrl  = new StringField(META, "piWebAPIUrl", SFieldFlags.SMANDATORY).setDefault("https://localhost/piwebapi");
-        useBasicAuthentication = new BooleanField(META, "basicAuthentication").setDefault(false);
+        //useBasicAuthentication = new BooleanField(META, "basicAuthentication").setDefault(false);
         Username  = new StringField(META, "userName");
         Password  = new EncodedStringField(META, "password");
 
@@ -78,7 +78,7 @@ public class PIHistoryProviderSettings extends PersistentRecord {
         IgnoreSSLIssues = new BooleanField(META, "ignoreCertificateIssues").setDefault(false);
 
 
-        Connection = (new Category("PIHistoryProviderSettings.Category.Connection", 1, false)).include(new SFieldMeta[]{PIWebAPIUrl, useBasicAuthentication, Username, Password});
+        Connection = (new Category("PIHistoryProviderSettings.Category.Connection", 1, false)).include(new SFieldMeta[]{PIWebAPIUrl, Username, Password});
         Storage = (new Category("PIHistoryProviderSettings.Category.Storage", 2, false)).include(new SFieldMeta[]{PIServer, PITagPrefix});
         Advanced = (new Category("PIHistoryProviderSettings.Category.Advanced", 3, true)).include(new SFieldMeta[]{BrowsablePIServers, BrowsableAFServers, OnlyBrowsePITagsWithPrefix, IgnoreSSLIssues});
     }

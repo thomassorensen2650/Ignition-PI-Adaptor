@@ -32,7 +32,7 @@ public class PIHistorySink implements DataSink {
 
    //private IngestionProperties ingestionProperties;
 
-    public PIHistorySink(String pipelineName, GatewayContext context, PIHistoryProviderSettings settings) {
+    public PIHistorySink(String pipelineName, GatewayContext context, PIHistoryProviderSettings settings) throws URISyntaxException {
         piClient = new PIQueryClientImpl(settings);
         logger.info("Starting Sink...:)");
         this.pipelineName = pipelineName;

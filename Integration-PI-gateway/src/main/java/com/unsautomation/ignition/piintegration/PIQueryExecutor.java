@@ -8,6 +8,7 @@ import com.inductiveautomation.ignition.gateway.sqltags.history.query.QueryContr
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -33,7 +34,7 @@ public class PIQueryExecutor  implements HistoryQueryExecutor {
     boolean processed = false;
     long maxTSInData = -1;
 
-    public PIQueryExecutor(GatewayContext context, PIHistoryProviderSettings settings, List<ColumnQueryDefinition> tagDefs, QueryController controller) {
+    public PIQueryExecutor(GatewayContext context, PIHistoryProviderSettings settings, List<ColumnQueryDefinition> tagDefs, QueryController controller) throws URISyntaxException {
         this.context = context;
         this.settings = settings;
         this.controller = controller;
