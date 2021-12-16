@@ -112,7 +112,12 @@ public class PIHistoryProvider implements TagHistoryProvider {
         logger.info("createQuery(tags, queryController) called.  tags: " + tags.toString()
                 + ", queryController: " + queryController.toString());
 
-        return new PIQueryExecutor(context, settings, tags, queryController);
+        try {
+            return new PIQueryExecutor(context, settings, tags, queryController);
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     /**
@@ -129,7 +134,7 @@ public class PIHistoryProvider implements TagHistoryProvider {
 
         // qualifiedPath: histprov:HAHAH,
         // browseFilter: BrowseFilter{allowedTypes=null, nameFilters=null, properties={}, excludeProperties=null, maxResults=-1, offset=-1, continuationPoint='null', recursive=false}
-        ArrayList<Result> list = new ArrayList();
+        ArrayList<Result> list = new ArrayList<>();
         String histProv = qualifiedPath.getPathComponent(WellKnownPathTypes.HistoryProvider);
         String systemName = null;
         String tagProvider = null;

@@ -18,7 +18,6 @@ import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.sql.Array;
 import java.util.*;
 
 public class PIQueryClientImpl {
@@ -35,7 +34,6 @@ public class PIQueryClientImpl {
                         .build();
     }
 
-
     Results<Result> query(QualifiedPath path) {
         return null;
     }
@@ -45,44 +43,52 @@ public class PIQueryClientImpl {
         // Create object graph
         JsonArray requests = new JsonArray();
         String gerArchiverUrl = String.format("%s/dataservers/?name=%s", settings.getWebAPIUrl(), settings.getPIArchiver());
-        JsonObject getArchiver = buildBatchItem("GetArchiverID", gerArchiverUrl, "GET", "", "");
+        JsonObject getArchiver = buildBaseBatchItem("GetArchiverID", gerArchiverUrl, "GET", "", "");
         requests.add(getArchiver);
-        List<HistoricalTagValue> errors = new ArrayList<HistoricalTagValue>();
+        List<HistoricalTagValue> errors = new ArrayList<>();
 
         if (records.size() > 0) {
+            //
             // Write Tags
+            //
             logger.debug("Logging " + records.size() + " records");
             for (int i = 0; i < records.size(); i++) {
                 HistoricalTagValue record = records.get(i);
-                JsonArray batchItems = createWriteBatchItem(record, i, false);
+                JsonArray batchItems = buildWriteBatchItem(record, i, false);
                 requests.addAll(batchItems);
             }
-            JsonElement response = postBatch(batchUri, requests);
+            JsonElement response = postBatchRequest(batchUri, requests);
+            batchResponseResult responses = analyzeBatchResponse(response, records);
 
             //
-            // Process Write Value result
+            // Process Result and Create missing tags (if any)
             //
-            List<HistoricalTagValue>[] responses = analyzeBatchResponse(response, records);
-            errors.addAll(responses[1]);
-            if (responses[1].size() > 0) {
+
+            errors.addAll(responses.error);
+            if (responses.tagNotExist.size() > 0) {
                 requests = new JsonArray();
-                for (int i = 0; i < responses[1].size(); i++) {
-                    HistoricalTagValue record = responses[1].get(i);
-                    JsonArray batchItems = createWriteBatchItem(record,i, false);
+                for (int i = 0; i < responses.tagNotExist.size(); i++) {
+                    HistoricalTagValue record = responses.tagNotExist.get(i);
+                    JsonArray batchItems = buildWriteBatchItem(record,i, true);
                     requests.addAll(batchItems);
                 }
-                response = postBatch(batchUri, requests);
-                List<HistoricalTagValue>[] responses2 = analyzeBatchResponse(response, records);
-                errors.addAll(responses2[0]); // We already tried to create tags, treat as normal errors
-                errors.addAll(responses2[1]);
+                response = postBatchRequest(batchUri, requests);
+                batchResponseResult responses2 = analyzeBatchResponse(response, records);
+                errors.addAll(responses2.error); // We already tried to create tags, treat as normal errors
+                errors.addAll(responses2.tagNotExist);
             }
         }
         return errors;
     }
 
-    List<HistoricalTagValue>[] analyzeBatchResponse(JsonElement response, List<HistoricalTagValue> records) {
-        List<HistoricalTagValue> errors = new ArrayList<HistoricalTagValue>();
-        List<HistoricalTagValue> needToCreate = new ArrayList<HistoricalTagValue>();
+    /**
+     * ablyse the response from PI WebAPI.
+     * @param response
+     * @param records
+     * @return
+     */
+    batchResponseResult analyzeBatchResponse(JsonElement response, List<HistoricalTagValue> records) {
+        batchResponseResult result = new batchResponseResult();
 
         if (response != null && response.isJsonArray()) {
             // Loop though keys
@@ -90,7 +96,7 @@ public class PIQueryClientImpl {
                 JsonObject value = entry.getValue().getAsJsonObject();
                 String key = entry.getKey();
 
-                int status = value.has("Status") ? value.get("Status").getAsInt() : 0;
+                int status = value.has("Status") ? value.get("Status").getAsInt() : 900;
                 String content = value.has("Content") ? value.get("Content").getAsString() : null;
 
                 if (key.startsWith("WriteValue") && status > 300) {
@@ -99,31 +105,64 @@ public class PIQueryClientImpl {
 
                     if (content != null && content.startsWith("Some JSON paths did not select any tokens: $.GetTagID_")) {
                         // Create tags
-                        needToCreate.add(record);
+                        result.tagNotExist.add(record);
                     }else {
                         // Unknown Error
                         logger.error("Unable to Write Value");
-                        errors.add(record);
+                        result.error.add(record);
                     }
                 }
             }
         } else {
-            errors.addAll(records); // Assume that all writes are bad
+            result.error.addAll(records); // Assume that all writes are bad
             logger.error("Invalid response from PI WebAPI, assuming all values are bad");
         }
-        ArrayList<List<HistoricalTagValue>> r = new ArrayList<List<HistoricalTagValue>>();
-        r.add(needToCreate);
-        r.add(errors);
-
-        return r;
+        return result;
     }
 
-    JsonArray createWriteBatchItem(HistoricalTagValue record, int i, boolean create) {
+    /***
+     *
+     * @param name
+     * @param resource
+     * @param method
+     * @param parentId
+     * @param parameter
+     * @return
+     */
+    private JsonObject buildBaseBatchItem(String name, String resource, String method, String parentId, String parameter) {
+        JsonObject rtn = new JsonObject();
+        JsonObject inner = new JsonObject();
+        inner.addProperty("Resource", resource);
+        inner.addProperty("Method", method);
+
+        if (parentId != null && parentId != "") {
+            JsonArray a = new JsonArray();
+            a.add(parentId);
+            inner.add("ParentIDs", a);
+        }
+
+        if (parameter != null && parameter != "") {
+            JsonArray a = new JsonArray();
+            a.add(parameter);
+            inner.add("Parameters", a);
+        }
+        rtn.add(name, inner);
+        return rtn;
+    }
+
+    /**
+     * Create a Request to Find or create tag and then write a value to the tag.
+     * @param record the tag to write to
+     * @param i the ID that the write will be given in the request
+     * @param create true if it should create the tag
+     * @return the JSON object
+     */
+    JsonArray buildWriteBatchItem(HistoricalTagValue record, int i, boolean create) {
         JsonArray requests = new JsonArray();
 
         // Get Tag Request
         String getTagUrl = "{0}/points/?nameFilter=" + record.getSource().toStringPartial();
-        JsonObject getTag = buildBatchItem("GetTag_" + i, getTagUrl, "GET", "GetArchiverID","$.GetArchiverID.Content.Links.Self");
+        JsonObject getTag = buildBaseBatchItem("GetTag_" + i, getTagUrl, "GET", "GetArchiverID","$.GetArchiverID.Content.Links.Self");
         requests.add(getTag);
 
         // Value
@@ -137,21 +176,21 @@ public class PIQueryClientImpl {
         // Write Tag Request
         String writeTagUrl = "{0}?bufferOption=Buffer";
 
-        JsonObject writeTag = buildBatchItem("WriteTag_" + i, writeTagUrl, "POST","GetTag_" + i, "$.GetTagID_"+ i +".Content.Items[0].Links.RecordedData");
+        JsonObject writeTag = buildBaseBatchItem("WriteTag_" + i, writeTagUrl, "POST","GetTag_" + i, "$.GetTagID_"+ i +".Content.Items[0].Links.RecordedData");
         writeTag.getAsJsonObject("WriteTag_" + i).add("Content", tagWrites);
         requests.add(writeTag);
         return requests;
     }
 
     /***
-     *
+     * crete the basic structure that is required in order to write data to PI via the PI WebAPI Batch Controller.
      * @param uri
      * @param requests
      * @return
      * @throws IOException
      * @throws InterruptedException
      */
-    private JsonElement postBatch(URI uri, JsonArray requests)  {
+    private JsonElement postBatchRequest(URI uri, JsonArray requests)  {
         try {
             HttpRequest request = HttpRequest
                     .newBuilder()
@@ -177,35 +216,8 @@ public class PIQueryClientImpl {
     }
 
     /***
-     *
-     * @param name
-     * @param resource
-     * @param method
-     * @param parentId
-     * @param parameter
-     * @return
+     * Represent the result from a PI WebAPI Batch Request
      */
-    private JsonObject buildBatchItem(String name, String resource, String method, String parentId, String parameter) {
-        JsonObject rtn = new JsonObject();
-        JsonObject inner = new JsonObject();
-        inner.addProperty("Resource", resource);
-        inner.addProperty("Method", method);
-
-        if (parentId != null && parentId != "") {
-            JsonArray a = new JsonArray();
-            a.add(parentId);
-            inner.add("ParentIDs", a);
-        }
-
-        if (parameter != null && parameter != "") {
-            JsonArray a = new JsonArray();
-            a.add(parameter);
-            inner.add("Parameters", a);
-        }
-        rtn.add(name, inner);
-        return rtn;
-    }
-
     class batchResponseResult {
         public final List<HistoricalTagValue> tagNotExist;
         public final List<HistoricalTagValue> error;
