@@ -49,12 +49,17 @@ public class PIHistoryProviderSettings extends PersistentRecord {
     }
 
     public String getPassword() {
-        return ""; //getString(password);
+        return getString(Password);
+    }
+    public String getUsername() {
+        return getString(Username);
     }
 
     public String getPIArchiver() {
-        return "";//getString(PIArchiver);
+        return getString(PIServer);
     }
+    public boolean getVerifySSL() { return true; }
+    public boolean getVerifyCertificateHostname() { return true;}
 
 
     static {

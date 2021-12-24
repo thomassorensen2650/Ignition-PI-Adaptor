@@ -8,6 +8,18 @@ import com.inductiveautomation.ignition.common.QualifiedPath;
 import com.inductiveautomation.ignition.common.browsing.Result;
 import com.inductiveautomation.ignition.common.browsing.Results;
 import com.inductiveautomation.ignition.gateway.history.HistoricalTagValue;
+import org.apache.http.auth.AuthenticationException;
+import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.conn.ssl.NoopHostnameVerifier;
+import org.apache.http.conn.ssl.TrustStrategy;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.auth.BasicScheme;
+import org.apache.http.impl.client.BasicResponseHandler;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.ssl.SSLContextBuilder;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,109 +27,206 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.util.*;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.List;
 
 public class PIQueryClientImpl {
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private final PIHistoryProviderSettings settings;
-    private final HttpClient httpClient;
+    private final CloseableHttpClient httpClient;
     private final URI batchUri;
 
     public PIQueryClientImpl(PIHistoryProviderSettings settings) throws URISyntaxException {
         this.settings = settings;
-        batchUri = new URI("http://192.168.50.3:1880/test");
-        httpClient  = HttpClient.newBuilder()
-                        .version(HttpClient.Version.HTTP_1_1)
-                        .build();
+        batchUri = new URI(settings.getWebAPIUrl());
+        httpClient = getHttpClient();
+    }
+
+
+    public CloseableHttpClient getHttpClient() {
+        HttpClientBuilder builder = HttpClients.custom();
+        try {
+            if (settings.getVerifyCertificateHostname()) {
+                builder.setSSLHostnameVerifier(NoopHostnameVerifier.INSTANCE);
+            }
+            if (settings.getVerifySSL()) {
+                builder.setSSLContext(new SSLContextBuilder().loadTrustMaterial(null, new TrustStrategy()
+                {
+                    public boolean isTrusted(X509Certificate[] arg0, String arg1) throws CertificateException
+                    {
+                        return true;
+                    }
+                }).build());
+            }
+        } catch (KeyManagementException e) {
+            logger.error("KeyManagementException in creating http client instance", e);
+        } catch (NoSuchAlgorithmException e) {
+            logger.error("NoSuchAlgorithmException in creating http client instance", e);
+        } catch (KeyStoreException e) {
+            logger.error("KeyStoreException in creating http client instance", e);
+        }
+        return builder.build();
     }
 
     Results<Result> query(QualifiedPath path) {
         return null;
     }
 
-    List<HistoricalTagValue> ingestRecords(@NotNull List<HistoricalTagValue> records) {
+    List<HistoricalTagValue> ingestRecords(@NotNull List<HistoricalTagValue> records) throws IOException, InterruptedException {
 
-        // Create object graph
-        JsonArray requests = new JsonArray();
-        String gerArchiverUrl = String.format("%s/dataservers/?name=%s", settings.getWebAPIUrl(), settings.getPIArchiver());
-        JsonObject getArchiver = buildBaseBatchItem("GetArchiverID", gerArchiverUrl, "GET", "", "");
-        requests.add(getArchiver);
-        List<HistoricalTagValue> errors = new ArrayList<>();
-
+        var errors = new ArrayList<HistoricalTagValue>();
         if (records.size() > 0) {
-            //
-            // Write Tags
-            //
+
+            // Create object graph
+            var requests = new JsonArray();
+            var gerArchiverUrl = String.format("%s/dataservers/?name=%s", settings.getWebAPIUrl(), settings.getPIArchiver());
+            var getArchiver = buildBatchItem("GetArchiverID", gerArchiverUrl, "GET", "", "");
+            requests.add(getArchiver);
+
+            // Create Write Request
             logger.debug("Logging " + records.size() + " records");
             for (int i = 0; i < records.size(); i++) {
                 HistoricalTagValue record = records.get(i);
-                JsonArray batchItems = buildWriteBatchItem(record, i, false);
+                JsonArray batchItems = createWriteBatchItem(record, i, false);
                 requests.addAll(batchItems);
             }
-            JsonElement response = postBatchRequest(batchUri, requests);
-            batchResponseResult responses = analyzeBatchResponse(response, records);
+
+            // Send Request
+            JsonElement response = postBatch(batchUri, requests);
 
             //
-            // Process Result and Create missing tags (if any)
+            // Process Write Value result
             //
+            var result = analyzeBatchResponse(response, records);
+            errors.addAll(result.errors);
 
-            errors.addAll(responses.error);
-            if (responses.tagNotExist.size() > 0) {
-                requests = new JsonArray();
-                for (int i = 0; i < responses.tagNotExist.size(); i++) {
-                    HistoricalTagValue record = responses.tagNotExist.get(i);
-                    JsonArray batchItems = buildWriteBatchItem(record,i, true);
-                    requests.addAll(batchItems);
+            if (result.tagNotExist.size() > 0) {
+
+                var requests2 = new JsonArray();
+                requests2.add(getArchiver);
+                for (int i = 0; i < result.tagNotExist.size(); i++) {
+                    var record = result.tagNotExist.get(i);
+                    var batchItems = createWriteBatchItem(record,i, true);
+                    requests2.addAll(batchItems);
                 }
-                response = postBatchRequest(batchUri, requests);
-                batchResponseResult responses2 = analyzeBatchResponse(response, records);
-                errors.addAll(responses2.error); // We already tried to create tags, treat as normal errors
-                errors.addAll(responses2.tagNotExist);
+                response = postBatch(batchUri, requests);
+                var responses2 = analyzeBatchResponse(response, records);
+                errors.addAll(responses2.tagNotExist); // We already tried to create tags, treat as normal errors
+                errors.addAll(responses2.errors);
             }
         }
         return errors;
     }
 
-    /**
-     * ablyse the response from PI WebAPI.
-     * @param response
-     * @param records
-     * @return
-     */
     batchResponseResult analyzeBatchResponse(JsonElement response, List<HistoricalTagValue> records) {
-        batchResponseResult result = new batchResponseResult();
 
-        if (response != null && response.isJsonArray()) {
+        var r = new batchResponseResult(response);
+
+        if (response != null && response.isJsonObject()) {
             // Loop though keys
-            for (Map.Entry<String, JsonElement> entry : response.getAsJsonObject().entrySet()) {
-                JsonObject value = entry.getValue().getAsJsonObject();
-                String key = entry.getKey();
-
-                int status = value.has("Status") ? value.get("Status").getAsInt() : 900;
-                String content = value.has("Content") ? value.get("Content").getAsString() : null;
+            for (var entry : response.getAsJsonObject().entrySet()) {
+                var value = entry.getValue().getAsJsonObject();
+                var key = entry.getKey();
+                var status = value.has("Status") ? value.get("Status").getAsInt() : 0;
+                var content = value.has("Content") ? value.get("Content").getAsString() : null;
 
                 if (key.startsWith("WriteValue") && status > 300) {
                     int id = Integer.parseInt(key.split("_")[1]);   //.pop(); // Get array index of tags that need to be created.
-                    HistoricalTagValue record = records.get(id);
+                    var record = records.get(id);
 
                     if (content != null && content.startsWith("Some JSON paths did not select any tokens: $.GetTagID_")) {
                         // Create tags
-                        result.tagNotExist.add(record);
+                        r.tagNotExist.add(record);
                     }else {
                         // Unknown Error
                         logger.error("Unable to Write Value");
-                        result.error.add(record);
+                        r.errors.add(record);
                     }
                 }
             }
         } else {
-            result.error.addAll(records); // Assume that all writes are bad
+            r.errors.addAll(records); // Assume that all writes are bad
             logger.error("Invalid response from PI WebAPI, assuming all values are bad");
         }
-        return result;
+
+        return r;
+    }
+
+    JsonArray createWriteBatchItem(HistoricalTagValue record, int i, boolean create) {
+        JsonArray requests = new JsonArray();
+
+        // Get Tag Request
+        String getTagUrl = "{0}/points/?nameFilter=" + record.getSource().toStringPartial();
+        JsonObject getTag = buildBatchItem("GetTag_" + i, getTagUrl, "GET", "GetArchiverID","$.GetArchiverID.Content.Links.Self");
+        requests.add(getTag);
+
+        // Value
+        JsonArray tagWrites = new JsonArray();
+        JsonObject j = new JsonObject();
+        j.addProperty("Value", record.getValue().toString());
+        j.addProperty("Timestamp", record.getTimestamp().toInstant().toString()); //FIXME : Is Epic or Zule the right way to send data
+        j.addProperty("Good", record.getQuality().isGood());
+        tagWrites.add(j);
+
+        // Write Tag Request
+        String writeTagUrl = "{0}?bufferOption=Buffer";
+
+        JsonObject writeTag = buildBatchItem("WriteTag_" + i, writeTagUrl, "POST","GetTag_" + i, "$.GetTagID_"+ i +".Content.Items[0].Links.RecordedData");
+        writeTag.getAsJsonObject("WriteTag_" + i).add("Content", tagWrites);
+        requests.add(writeTag);
+        return requests;
+    }
+
+    /***
+     *
+     * @param uri
+     * @param requests
+     * @return
+     * @throws IOException
+     * @throws InterruptedException
+     */
+    private JsonElement postBatch(URI uri, JsonArray requests) throws IOException, InterruptedException {
+        //try {
+
+        //var provider = new BasicCredentialsProvider();
+        //var credentials = new UsernamePasswordCredentials(settings.getUsername(), settings.getPassword());
+       // provider.setCredentials(AuthScope.ANY, credentials);
+        var creds = new UsernamePasswordCredentials("John", "pass");
+
+        HttpPost request = new HttpPost(uri);
+        request.setHeader("Accept", "application/json");
+        request.setHeader("Content-type", "application/json");
+        request.setEntity(new StringEntity(requests.toString()));
+        try {
+            request.addHeader(new BasicScheme().authenticate(creds, request, null));
+        } catch (AuthenticationException e) {
+            logger.error("Authentication Error", e);
+        }
+
+        var response = httpClient.execute(request); //, HttpResponse.BodyHandlers.ofString());
+        var statusCode = response.getStatusLine().getStatusCode();
+        if (statusCode < 300 || statusCode >= 200) {
+            // Success
+            return JsonParser.parseString(response.body());
+        }
+
+        var content = new BasicResponseHandler().handleResponse(response);
+
+        logger.error("Invalid Response Code '" + response.statusCode() +  "' Error: " + response.body());
+        throw new IOException("Invalid Response fromn Web Service");
+        // TODO Remove, exception will be thrown if not good response
+        //logger.error("Invalid Response Code '" + response.statusCode() +  "' Error: " + response.body());
+        //return null;
+
+ //       } catch (Exception e) {
+  //          logger.error("Unable to send HTTP Request", e);
+      //      return null;
+    //    }
     }
 
     /***
@@ -129,7 +238,7 @@ public class PIQueryClientImpl {
      * @param parameter
      * @return
      */
-    private JsonObject buildBaseBatchItem(String name, String resource, String method, String parentId, String parameter) {
+    private JsonObject buildBatchItem(String name, String resource, String method, String parentId, String parameter) {
         JsonObject rtn = new JsonObject();
         JsonObject inner = new JsonObject();
         inner.addProperty("Resource", resource);
@@ -150,83 +259,21 @@ public class PIQueryClientImpl {
         return rtn;
     }
 
-    /**
-     * Create a Request to Find or create tag and then write a value to the tag.
-     * @param record the tag to write to
-     * @param i the ID that the write will be given in the request
-     * @param create true if it should create the tag
-     * @return the JSON object
-     */
-    JsonArray buildWriteBatchItem(HistoricalTagValue record, int i, boolean create) {
-        JsonArray requests = new JsonArray();
-
-        // Get Tag Request
-        String getTagUrl = "{0}/points/?nameFilter=" + record.getSource().toStringPartial();
-        JsonObject getTag = buildBaseBatchItem("GetTag_" + i, getTagUrl, "GET", "GetArchiverID","$.GetArchiverID.Content.Links.Self");
-        requests.add(getTag);
-
-        // Value
-        JsonArray tagWrites = new JsonArray();
-        JsonObject j = new JsonObject();
-        j.addProperty("Value", record.getValue().toString());
-        j.addProperty("Timestamp", record.getTimestamp().toInstant().toString()); //FIXME : Is Epic or Zule the right way to send data
-        j.addProperty("Good", record.getQuality().isGood());
-        tagWrites.add(j);
-
-        // Write Tag Request
-        String writeTagUrl = "{0}?bufferOption=Buffer";
-
-        JsonObject writeTag = buildBaseBatchItem("WriteTag_" + i, writeTagUrl, "POST","GetTag_" + i, "$.GetTagID_"+ i +".Content.Items[0].Links.RecordedData");
-        writeTag.getAsJsonObject("WriteTag_" + i).add("Content", tagWrites);
-        requests.add(writeTag);
-        return requests;
-    }
-
-    /***
-     * crete the basic structure that is required in order to write data to PI via the PI WebAPI Batch Controller.
-     * @param uri
-     * @param requests
-     * @return
-     * @throws IOException
-     * @throws InterruptedException
-     */
-    private JsonElement postBatchRequest(URI uri, JsonArray requests)  {
-        try {
-            HttpRequest request = HttpRequest
-                    .newBuilder()
-                    .uri(uri)
-                    .headers("Content-Type", "application/json")
-                    .POST(HttpRequest.BodyPublishers.ofString(requests.toString()))
-                    .build();
-
-            HttpResponse<String> response = httpClient
-                    .send(request, HttpResponse.BodyHandlers.ofString());
-
-            if (response.statusCode() < 300 && response.statusCode() >= 200) {
-                // Success
-                return JsonParser.parseString(response.body());
-            }
-            logger.error("Invalid Response Code '" + response.statusCode() +  "' Error: " + response.body());
-            return null;
-
-        } catch (Exception e) {
-            logger.error("Unable to send HTTP Request", e);
-            return null;
-        }
-    }
-
-    /***
-     * Represent the result from a PI WebAPI Batch Request
-     */
     class batchResponseResult {
         public final List<HistoricalTagValue> tagNotExist;
-        public final List<HistoricalTagValue> error;
-        public JsonObject result;
+        public final List<HistoricalTagValue> errors;
+        public JsonElement response;
 
-        public batchResponseResult() {
-            tagNotExist = new ArrayList<>();
-            error = new ArrayList<>();
-            result = null;
+        public batchResponseResult(JsonElement response) {
+            this.tagNotExist = new ArrayList<>();
+            this.errors = new ArrayList<>();
+            this.response = response;
+        }
+
+        public batchResponseResult(JsonElement response, List<HistoricalTagValue> tagNotExist, List<HistoricalTagValue> error) {
+            this.tagNotExist = tagNotExist;
+            this.errors = error;
+            this.response = response;
         }
     }
 }

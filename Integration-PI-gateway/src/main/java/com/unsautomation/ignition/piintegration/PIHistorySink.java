@@ -120,7 +120,7 @@ public class PIHistorySink implements DataSink {
      * Called from Ignition when tags change and have data available for storage.
      */
     @Override
-    public void storeData(HistoricalData data) throws IOException, InterruptedException, URISyntaxException { // TODO Should we fail on error?
+    public void storeData(HistoricalData data) throws IOException, InterruptedException { // TODO Should we fail on error?
         logger.debug("Received data of type '" + data.getClass().toString() + "'");
 
         List<HistoricalTagValue> records = new ArrayList<HistoricalTagValue>();
