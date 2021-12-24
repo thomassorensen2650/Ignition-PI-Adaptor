@@ -52,13 +52,7 @@ public class PIQueryClientImpl {
     public CloseableHttpClient getHttpClient() {
         HttpClientBuilder builder = HttpClients.custom();
 
-        //CredentialsProvider provider = new BasicCredentialsProvider();
-        //var credentials = new UsernamePasswordCredentials(settings.getUsername(), settings.getPassword());
-        //provider.setCredentials(AuthScope.ANY, credentials);
-        //builder.setDefaultCredentialsProvider(provider);
-
         try {
-
             if (settings.getVerifyCertificateHostname()) {
                 builder.setSSLHostnameVerifier(NoopHostnameVerifier.INSTANCE);
             }
@@ -100,12 +94,12 @@ public class PIQueryClientImpl {
             logger.debug("Logging " + records.size() + " records");
             for (int i = 0; i < records.size(); i++) {
                 HistoricalTagValue record = records.get(i);
-                JsonArray batchItems = createWriteBatchItem(record, i, false);
+                var batchItems = createWriteBatchItem(record, i, false);
                 requests.addAll(batchItems);
             }
 
             // Send Request
-            JsonElement response = postBatch(batchUri, requests);
+            var response = postBatch(batchUri, requests);
 
             //
             // Process Write Value result
@@ -166,25 +160,25 @@ public class PIQueryClientImpl {
     }
 
     JsonArray createWriteBatchItem(HistoricalTagValue record, int i, boolean create) {
-        JsonArray requests = new JsonArray();
+        var requests = new JsonArray();
 
         // Get Tag Request
-        String getTagUrl = "{0}/points/?nameFilter=" + record.getSource().toStringPartial();
-        JsonObject getTag = buildBatchItem("GetTag_" + i, getTagUrl, "GET", "GetArchiverID","$.GetArchiverID.Content.Links.Self");
+        var getTagUrl = "{0}/points/?nameFilter=" + record.getSource().toStringPartial();
+        var getTag = buildBatchItem("GetTag_" + i, getTagUrl, "GET", "GetArchiverID","$.GetArchiverID.Content.Links.Self");
         requests.add(getTag);
 
         // Value
-        JsonArray tagWrites = new JsonArray();
-        JsonObject j = new JsonObject();
+        var tagWrites = new JsonArray();
+        var j = new JsonObject();
         j.addProperty("Value", record.getValue().toString());
         j.addProperty("Timestamp", record.getTimestamp().toInstant().toString()); //FIXME : Is Epic or Zule the right way to send data
         j.addProperty("Good", record.getQuality().isGood());
         tagWrites.add(j);
 
         // Write Tag Request
-        String writeTagUrl = "{0}?bufferOption=Buffer";
+        var writeTagUrl = "{0}?bufferOption=Buffer";
 
-        JsonObject writeTag = buildBatchItem("WriteTag_" + i, writeTagUrl, "POST","GetTag_" + i, "$.GetTagID_"+ i +".Content.Items[0].Links.RecordedData");
+        var writeTag = buildBatchItem("WriteTag_" + i, writeTagUrl, "POST","GetTag_" + i, "$.GetTagID_"+ i +".Content.Items[0].Links.RecordedData");
         writeTag.getAsJsonObject("WriteTag_" + i).add("Content", tagWrites);
         requests.add(writeTag);
         return requests;
@@ -200,7 +194,7 @@ public class PIQueryClientImpl {
      */
     private JsonElement postBatch(URI uri, JsonArray requests) throws IOException, InterruptedException {
 
-        HttpPost request = new HttpPost(uri);
+        var request = new HttpPost(uri);
         request.setHeader("Accept", "application/json");
         request.setHeader("Content-type", "application/json");
         request.setEntity(new StringEntity(requests.toString()));
@@ -215,9 +209,6 @@ public class PIQueryClientImpl {
         }
 
         var response = httpClient.execute(request); //, HttpResponse.BodyHandlers.ofString());
-        var statusCode = response.getStatusLine().getStatusCode();
-        logger.info("Status Code: " + statusCode);
-
         try {
             var content = new BasicResponseHandler().handleResponse(response);
             return JsonParser.parseString(content);
@@ -237,19 +228,19 @@ public class PIQueryClientImpl {
      * @return
      */
     private JsonObject buildBatchItem(String name, String resource, String method, String parentId, String parameter) {
-        JsonObject rtn = new JsonObject();
-        JsonObject inner = new JsonObject();
+        var rtn = new JsonObject();
+        var inner = new JsonObject();
         inner.addProperty("Resource", resource);
         inner.addProperty("Method", method);
 
         if (parentId != null && parentId != "") {
-            JsonArray a = new JsonArray();
+            var a = new JsonArray();
             a.add(parentId);
             inner.add("ParentIDs", a);
         }
 
         if (parameter != null && parameter != "") {
-            JsonArray a = new JsonArray();
+            var a = new JsonArray();
             a.add(parameter);
             inner.add("Parameters", a);
         }
