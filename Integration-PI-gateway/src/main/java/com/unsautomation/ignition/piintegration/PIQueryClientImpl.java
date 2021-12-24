@@ -10,6 +10,7 @@ import com.inductiveautomation.ignition.common.browsing.Results;
 import com.inductiveautomation.ignition.gateway.history.HistoricalTagValue;
 import org.apache.http.auth.AuthenticationException;
 import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.conn.ssl.TrustStrategy;
@@ -50,7 +51,14 @@ public class PIQueryClientImpl {
 
     public CloseableHttpClient getHttpClient() {
         HttpClientBuilder builder = HttpClients.custom();
+
+        //CredentialsProvider provider = new BasicCredentialsProvider();
+        //var credentials = new UsernamePasswordCredentials(settings.getUsername(), settings.getPassword());
+        //provider.setCredentials(AuthScope.ANY, credentials);
+        //builder.setDefaultCredentialsProvider(provider);
+
         try {
+
             if (settings.getVerifyCertificateHostname()) {
                 builder.setSSLHostnameVerifier(NoopHostnameVerifier.INSTANCE);
             }
@@ -191,42 +199,32 @@ public class PIQueryClientImpl {
      * @throws InterruptedException
      */
     private JsonElement postBatch(URI uri, JsonArray requests) throws IOException, InterruptedException {
-        //try {
-
-        //var provider = new BasicCredentialsProvider();
-        //var credentials = new UsernamePasswordCredentials(settings.getUsername(), settings.getPassword());
-       // provider.setCredentials(AuthScope.ANY, credentials);
-        var creds = new UsernamePasswordCredentials("John", "pass");
 
         HttpPost request = new HttpPost(uri);
         request.setHeader("Accept", "application/json");
         request.setHeader("Content-type", "application/json");
         request.setEntity(new StringEntity(requests.toString()));
-        try {
-            request.addHeader(new BasicScheme().authenticate(creds, request, null));
-        } catch (AuthenticationException e) {
-            logger.error("Authentication Error", e);
+
+        if (settings.getUsername() != "") {
+            var auth = new UsernamePasswordCredentials(settings.getUsername(), settings.getPassword());
+            try {
+                request.addHeader(new BasicScheme().authenticate(auth, request, null));
+            } catch (AuthenticationException e) {
+                logger.error("Error Setting Authentication, Trying without Authentication", e);
+            }
         }
 
         var response = httpClient.execute(request); //, HttpResponse.BodyHandlers.ofString());
         var statusCode = response.getStatusLine().getStatusCode();
-        if (statusCode < 300 || statusCode >= 200) {
-            // Success
-            return JsonParser.parseString(response.body());
+        logger.info("Status Code: " + statusCode);
+
+        try {
+            var content = new BasicResponseHandler().handleResponse(response);
+            return JsonParser.parseString(content);
+        } catch (HttpResponseException ex) {
+            logger.error("Invalid Response", ex);
+            throw new IOException(ex.getMessage());
         }
-
-        var content = new BasicResponseHandler().handleResponse(response);
-
-        logger.error("Invalid Response Code '" + response.statusCode() +  "' Error: " + response.body());
-        throw new IOException("Invalid Response fromn Web Service");
-        // TODO Remove, exception will be thrown if not good response
-        //logger.error("Invalid Response Code '" + response.statusCode() +  "' Error: " + response.body());
-        //return null;
-
- //       } catch (Exception e) {
-  //          logger.error("Unable to send HTTP Request", e);
-      //      return null;
-    //    }
     }
 
     /***
