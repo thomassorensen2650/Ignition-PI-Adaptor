@@ -34,7 +34,9 @@ import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class PIQueryClientImpl {
     private final Logger logger = LoggerFactory.getLogger(getClass());
@@ -44,7 +46,7 @@ public class PIQueryClientImpl {
 
     public PIQueryClientImpl(PIHistoryProviderSettings settings) throws URISyntaxException {
         this.settings = settings;
-        batchUri = new URI(settings.getWebAPIUrl());
+        batchUri = new URI(settings.getWebAPIUrl() + "/batch");
         httpClient = getHttpClient();
     }
 
@@ -52,6 +54,7 @@ public class PIQueryClientImpl {
     public CloseableHttpClient getHttpClient() {
         HttpClientBuilder builder = HttpClients.custom();
 
+        builder.setUserAgent("Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.95 Safari/537.11");
         try {
             if (settings.getVerifyCertificateHostname()) {
                 builder.setSSLHostnameVerifier(NoopHostnameVerifier.INSTANCE);
@@ -85,17 +88,20 @@ public class PIQueryClientImpl {
         if (records.size() > 0) {
 
             // Create object graph
-            var requests = new JsonArray();
+            var requests = new JsonObject();
             var gerArchiverUrl = String.format("%s/dataservers/?name=%s", settings.getWebAPIUrl(), settings.getPIArchiver());
-            var getArchiver = buildBatchItem("GetArchiverID", gerArchiverUrl, "GET", "", "");
-            requests.add(getArchiver);
+            var getArchiver = buildBatchItem(gerArchiverUrl, "GET", "", "", null);
+            requests.add("GetArchiverID", getArchiver);
 
             // Create Write Request
             logger.debug("Logging " + records.size() + " records");
             for (int i = 0; i < records.size(); i++) {
                 HistoricalTagValue record = records.get(i);
+
                 var batchItems = createWriteBatchItem(record, i, false);
-                requests.addAll(batchItems);
+                for (var e : batchItems.entrySet()) {
+                    requests.add(e.getKey(), e.getValue());
+                }
             }
 
             // Send Request
@@ -109,14 +115,18 @@ public class PIQueryClientImpl {
 
             if (result.tagNotExist.size() > 0) {
 
-                var requests2 = new JsonArray();
-                requests2.add(getArchiver);
+                var requests2 = new JsonObject();
+                requests2.add("GetArchiverID", getArchiver);
                 for (int i = 0; i < result.tagNotExist.size(); i++) {
                     var record = result.tagNotExist.get(i);
                     var batchItems = createWriteBatchItem(record,i, true);
-                    requests2.addAll(batchItems);
+
+                    for (var e : batchItems.entrySet()) {
+                        requests2.add(e.getKey(), e.getValue());
+                    }
+
                 }
-                response = postBatch(batchUri, requests);
+                response = postBatch(batchUri, requests2);
                 var responses2 = analyzeBatchResponse(response, records);
                 errors.addAll(responses2.tagNotExist); // We already tried to create tags, treat as normal errors
                 errors.addAll(responses2.errors);
@@ -125,6 +135,12 @@ public class PIQueryClientImpl {
         return errors;
     }
 
+    /***
+     * Analyse the result from a PI Web API Batch request, and verify that all tag writes
+     * @param response
+     * @param records
+     * @return
+     */
     batchResponseResult analyzeBatchResponse(JsonElement response, List<HistoricalTagValue> records) {
 
         var r = new batchResponseResult(response);
@@ -159,13 +175,36 @@ public class PIQueryClientImpl {
         return r;
     }
 
-    JsonArray createWriteBatchItem(HistoricalTagValue record, int i, boolean create) {
-        var requests = new JsonArray();
+
+
+    Map<String, JsonElement> createWriteBatchItem(HistoricalTagValue record, int i, boolean create) {
+        var requests = new HashMap<String, JsonElement>();
 
         // Get Tag Request
-        var getTagUrl = "{0}/points/?nameFilter=" + record.getSource().toStringPartial();
-        var getTag = buildBatchItem("GetTag_" + i, getTagUrl, "GET", "GetArchiverID","$.GetArchiverID.Content.Links.Self");
-        requests.add(getTag);
+        if (create) {
+
+            var tagDetails = new JsonObject();
+            tagDetails.addProperty("Name", record.getSource().toStringPartial());
+            tagDetails.addProperty("PointType", record.getTypeClass().getDataType().toString());
+            tagDetails.addProperty("EngineeringUnits", "");
+            //tagDetails.addProperty("PointClass", "classic");
+
+            // TODO:
+
+            /*
+            * "Headers": {
+          "Cache-Control": "no-cache"
+            }
+            * */
+            var createTag = buildBatchItem("{0}/points/", "POST", "GetArchiverID", "$.GetArchiverID.Content.Links.Self", tagDetails);
+            requests.put("CreateTag_" + i, createTag);
+        } else {
+            var getTagUrl = "{0}/points/?nameFilter=" + record.getSource().toStringPartial();
+            var getTag = buildBatchItem(getTagUrl, "GET", "GetArchiverID", "$.GetArchiverID.Content.Links.Self", null);
+            requests.put("GetTag_" + i, getTag);
+        }
+
+
 
         // Value
         var tagWrites = new JsonArray();
@@ -178,9 +217,8 @@ public class PIQueryClientImpl {
         // Write Tag Request
         var writeTagUrl = "{0}?bufferOption=Buffer";
 
-        var writeTag = buildBatchItem("WriteTag_" + i, writeTagUrl, "POST","GetTag_" + i, "$.GetTagID_"+ i +".Content.Items[0].Links.RecordedData");
-        writeTag.getAsJsonObject("WriteTag_" + i).add("Content", tagWrites);
-        requests.add(writeTag);
+        var writeTag = buildBatchItem(writeTagUrl, "POST","GetTag_" + i, "$.GetTag_"+ i +".Content.Items[0].Links.RecordedData", tagWrites);
+        requests.put("WriteTag_" + i, writeTag);
         return requests;
     }
 
@@ -192,10 +230,11 @@ public class PIQueryClientImpl {
      * @throws IOException
      * @throws InterruptedException
      */
-    private JsonElement postBatch(URI uri, JsonArray requests) throws IOException, InterruptedException {
+    private JsonElement postBatch(URI uri, JsonObject requests) throws IOException, InterruptedException {
 
+        logger.info("Posting " + requests.toString() + " to " + batchUri.toString());
         var request = new HttpPost(uri);
-        request.setHeader("Accept", "application/json");
+        //request.setHeader("Accept", "application/json");
         request.setHeader("Content-type", "application/json");
         request.setEntity(new StringEntity(requests.toString()));
 
@@ -220,31 +259,32 @@ public class PIQueryClientImpl {
 
     /***
      *
-     * @param name
      * @param resource
      * @param method
      * @param parentId
      * @param parameter
      * @return
      */
-    private JsonObject buildBatchItem(String name, String resource, String method, String parentId, String parameter) {
+    private JsonObject buildBatchItem(String resource, String method, String parentId, String parameter, JsonElement content) {
         var rtn = new JsonObject();
-        var inner = new JsonObject();
-        inner.addProperty("Resource", resource);
-        inner.addProperty("Method", method);
+        rtn.addProperty("Resource", resource);
+        rtn.addProperty("Method", method);
 
         if (parentId != null && parentId != "") {
             var a = new JsonArray();
             a.add(parentId);
-            inner.add("ParentIDs", a);
+            rtn.add("ParentIDs", a);
         }
 
         if (parameter != null && parameter != "") {
             var a = new JsonArray();
             a.add(parameter);
-            inner.add("Parameters", a);
+            rtn.add("Parameters", a);
         }
-        rtn.add(name, inner);
+
+        if(content != null) {
+            rtn.add("Content", content);
+        }
         return rtn;
     }
 
@@ -259,10 +299,10 @@ public class PIQueryClientImpl {
             this.response = response;
         }
 
-        public batchResponseResult(JsonElement response, List<HistoricalTagValue> tagNotExist, List<HistoricalTagValue> error) {
+       /* public batchResponseResult(JsonElement response, List<HistoricalTagValue> tagNotExist, List<HistoricalTagValue> error) {
             this.tagNotExist = tagNotExist;
             this.errors = error;
             this.response = response;
-        }
+        }*/
     }
 }
