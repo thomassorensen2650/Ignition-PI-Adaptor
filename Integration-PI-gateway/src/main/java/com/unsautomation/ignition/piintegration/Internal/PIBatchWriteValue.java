@@ -1,7 +1,6 @@
 package com.unsautomation.ignition.piintegration.Internal;
 
 import com.inductiveautomation.ignition.gateway.history.HistoricalTagValue;
-
 import java.util.Date;
 
 public class PIBatchWriteValue {

@@ -1,10 +1,12 @@
-com/unsautomation/ignition/piintegration/PIQueryClientImpl$1.class
 com/unsautomation/ignition/piintegration/PIHistoryProviderType.class
-com/unsautomation/ignition/GatewayHook.class
+com/unsautomation/ignition/piintegration/Internal/PIQueryClientImpl$1.class
 com/unsautomation/ignition/piintegration/PIHistoryProviderSettings.class
 com/unsautomation/ignition/piintegration/PIHistorySink.class
-com/unsautomation/ignition/piintegration/PIQueryClientImpl.class
-com/unsautomation/ignition/piintegration/PIQueryExecutor.class
+com/unsautomation/ignition/piintegration/Internal/PIBatchWriteValue.class
+com/unsautomation/ignition/piintegration/Internal/batchResponseResult.class
 com/unsautomation/ignition/piintegration/PIHistorySink$HistorySinkStatus.class
-com/unsautomation/ignition/piintegration/PIQueryClientImpl$batchResponseResult.class
+com/unsautomation/ignition/piintegration/Internal/PIWebAPIBatchWrite.class
 com/unsautomation/ignition/piintegration/PIHistoryProvider.class
+com/unsautomation/ignition/piintegration/Internal/PIQueryClientImpl.class
+com/unsautomation/ignition/GatewayHook.class
+com/unsautomation/ignition/piintegration/PIQueryExecutor.class

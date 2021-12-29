@@ -11,7 +11,15 @@ class batchResponseResult {
     public JsonElement response;
     private final PIWebAPIBatchWrite context;
 
-    public Map<String, List<PIBatchWriteValue>> getErrors(boolean includeTagNotFound) {
+    public batchResponseResult(PIWebAPIBatchWrite context, JsonElement response) {
+        this.tagNotExist = new HashMap<>();
+        this.errors = new HashMap<>();
+        this.response = response;
+        this.context = context;
+    }
+
+
+    Map<String, List<PIBatchWriteValue>> getErrors(boolean includeTagNotFound) {
         return errors;
     }
 
@@ -34,14 +42,7 @@ class batchResponseResult {
         return tagNotExist.size() > 0;
     }
 
-    public batchResponseResult(PIWebAPIBatchWrite context, JsonElement response) {
-        this.tagNotExist = new HashMap<>();
-        this.errors = new HashMap<>();
-        this.response = response;
-        this.context = context;
-    }
-
-    JsonElement buildWriteRequest() {
+    JsonElement buildCreateAndWriteRequest() {
         return context.buildWriteRequest(tagNotExist, true);
     }
 }

@@ -21,17 +21,11 @@ public class PIWebAPIBatchWrite {
     private final Map<String, List<PIBatchWriteValue>> writes;
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    // Will be used to build request.
-    //private JsonObject requests;
-
-    //private PIWebAPIBatchWrite context;
-
     public PIWebAPIBatchWrite(String url, String piArchiver) {
         this.url = url;
         this.piArchiver = piArchiver;
         tagIdMap = new HashMap<>();
         writes = new HashMap<>();
-        //writeMap = new HashMap<>();
     }
 
     /***
@@ -50,12 +44,7 @@ public class PIWebAPIBatchWrite {
         return buildWriteRequest(writes, false);
     }
 
-    public JsonElement buildCreateAndWriteRequest(Map<String, List<PIBatchWriteValue>> data) {
-        return buildWriteRequest(data, true);
-    }
-
     public batchResponseResult analyseResponse(JsonElement response) throws IOException {
-
         var r = new batchResponseResult(this, response);
 
         if (response != null && response.isJsonObject()) {
@@ -64,25 +53,25 @@ public class PIWebAPIBatchWrite {
                 var value = entry.getValue().getAsJsonObject();
                 var key = entry.getKey();
                 var status = value.has("Status") ? value.get("Status").getAsInt() : 0;
-                var content = value.has("Content") ? value.get("Content").getAsString() : null;
+                var content = value.has("Content") && value.get("Content").isJsonPrimitive() ? value.get("Content").getAsString() : null;
 
-                if (key.startsWith("WriteTag") && status > 300) {
-                    int id = Integer.parseInt(key.split("_")[1]);   //.pop(); // Get array index of tags that need to be created.
+                if (key.startsWith("w_") && (status > 300 || status < 200)) {
+                    int id = Integer.parseInt(key.split("_")[1]);
 
-                    var tagName = getTagforId(id);
+                    var tagName = getTagForId(id);
 
-                    if (content != null && content.startsWith("Some JSON paths did not select any tokens: $.GetTagID_")) {
+                    if (content != null && content.startsWith("Some JSON paths did not select any tokens")) {
                         r.addTagNotFound(tagName, writes.get(tagName));
                     }else if (content != null){
                         logger.error(content.toString());
                         r.addError(tagName, writes.get(tagName));
                     } else {
+                        logger.debug("Unknown Error");
                         r.addError(tagName, writes.get(tagName));
                     }
                 }
             }
         } else {
-
              logger.error("Invalid response from PI WebAPI:" + response.toString());
         }
         return r;
@@ -102,6 +91,7 @@ public class PIWebAPIBatchWrite {
 
             var writeId = nextId++;
             if (create) {
+                logger.info("Creating tag" + tagName);
                 var tagDetails = new JsonObject();
                 tagDetails.addProperty("Name", tagName);
                 tagDetails.addProperty("PointType", values.get(0).getDataType());
@@ -111,7 +101,7 @@ public class PIWebAPIBatchWrite {
                 var createTag = buildBatchItem("{0}/points/", "POST", "GetArchiverID", "$.GetArchiverID.Content.Links.Self", tagDetails);
                 requests.add("t_" + writeId, createTag);
             } else {
-                var getTagUrl = "{0}/points/?nameFilter=" + writeId;
+                var getTagUrl = "{0}/points/?nameFilter=" + piArchiver;
                 var getTag = buildBatchItem(getTagUrl, "GET", "GetArchiverID", "$.GetArchiverID.Content.Links.Self", null);
                 requests.add("t_" + writeId, getTag);
             }
@@ -127,16 +117,19 @@ public class PIWebAPIBatchWrite {
                 //j.addProperty("Good", record.getQuality().isGood());
                 tagWrites.add(j);
             }
+
+            var param = create ? "$.t_${idx}.Headers.Location" :
+                    "$.t_" + writeId +".Content.Items[0].Links.RecordedData";
             // Write Tag Request
             var writeTagUrl = "{0}?bufferOption=Buffer";
-            var writeTag = buildBatchItem(writeTagUrl, "POST","t_" + writeId, "$.t_" + writeId +".Content.Items[0].Links.RecordedData", tagWrites);
+            var writeTag = buildBatchItem(writeTagUrl, "POST","t_" + writeId, param, tagWrites);
             requests.add("w_" + writeId, writeTag);
             //writeMap.put(tagId, val);
         }
         return requests;
     }
 
-    String getTagforId(Integer id) throws IOException {
+    String getTagForId(Integer id) throws IOException {
         for (var t : tagIdMap.entrySet()) {
             if (t.getValue() == id) {
                 return t.getKey();

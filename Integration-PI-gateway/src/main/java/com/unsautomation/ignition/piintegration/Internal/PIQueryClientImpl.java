@@ -46,7 +46,6 @@ public class PIQueryClientImpl {
         httpClient = getHttpClient();
     }
 
-
     /***
      * Create a HTTP Client
      * @return
@@ -85,7 +84,7 @@ public class PIQueryClientImpl {
     /***
      * Ingest data into PI Historian
      * @param records
-     * @return
+     * @return a map of write errors
      * @throws IOException
      * @throws InterruptedException
      */
@@ -110,7 +109,8 @@ public class PIQueryClientImpl {
 
             // Crete tags if they dont exist.
             if (result.hasTagNotFound()) {
-                var creteTagsRequest = result.buildWriteRequest();
+                logger.info("Tags not found! Trying to create...");
+                var creteTagsRequest = result.buildCreateAndWriteRequest();
                 var createResponse = postBatch(batchUri, creteTagsRequest);
                 var createResult = batchRequestManager.analyseResponse(createResponse);
                 errors.putAll(createResult.getErrors(true));
