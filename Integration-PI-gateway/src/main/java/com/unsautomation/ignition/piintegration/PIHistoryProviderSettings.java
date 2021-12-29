@@ -41,7 +41,12 @@ public class PIHistoryProviderSettings extends PersistentRecord {
 
 
     public String getWebAPIUrl() {
-        return getString(PIWebAPIUrl);
+        var url = getString(PIWebAPIUrl);
+
+        if (url.substring(url.length() - 1) == "/") {
+            url = url.substring(0,url.length() - 1);
+        }
+        return url;
     }
 
     public boolean getEnableSecurity() {

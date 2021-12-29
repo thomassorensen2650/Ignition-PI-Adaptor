@@ -4,6 +4,7 @@ import com.inductiveautomation.ignition.common.StatMetric;
 import com.inductiveautomation.ignition.common.i18n.LocalizedString;
 import com.inductiveautomation.ignition.gateway.history.*;
 import com.inductiveautomation.ignition.gateway.model.GatewayContext;
+import com.unsautomation.ignition.piintegration.Internal.PIQueryClientImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
