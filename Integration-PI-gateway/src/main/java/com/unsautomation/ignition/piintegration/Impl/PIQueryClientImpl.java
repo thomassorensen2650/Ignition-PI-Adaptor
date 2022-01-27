@@ -1,6 +1,8 @@
-package com.unsautomation.ignition.piintegration.Internal;
+package com.unsautomation.ignition.piintegration.Impl;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.inductiveautomation.ignition.common.QualifiedPath;
 import com.inductiveautomation.ignition.common.browsing.Result;
@@ -10,6 +12,7 @@ import com.unsautomation.ignition.piintegration.PIHistoryProviderSettings;
 import org.apache.http.auth.AuthenticationException;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.HttpResponseException;
+import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.conn.ssl.TrustStrategy;
@@ -30,9 +33,9 @@ import java.net.URISyntaxException;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class PIQueryClientImpl {
     private final Logger logger = LoggerFactory.getLogger(getClass());
@@ -48,9 +51,9 @@ public class PIQueryClientImpl {
 
     /***
      * Create a HTTP Client
-     * @return
+     * @return a configured HTTP Client
      */
-    public CloseableHttpClient getHttpClient() {
+    CloseableHttpClient getHttpClient() {
         HttpClientBuilder builder = HttpClients.custom();
 
         builder.setUserAgent("Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.95 Safari/537.11");
@@ -59,13 +62,7 @@ public class PIQueryClientImpl {
                 builder.setSSLHostnameVerifier(NoopHostnameVerifier.INSTANCE);
             }
             if (settings.getVerifySSL()) {
-                builder.setSSLContext(new SSLContextBuilder().loadTrustMaterial(null, new TrustStrategy()
-                {
-                    public boolean isTrusted(X509Certificate[] arg0, String arg1) throws CertificateException
-                    {
-                        return true;
-                    }
-                }).build());
+                builder.setSSLContext(new SSLContextBuilder().loadTrustMaterial(null, (TrustStrategy) (arg0, arg1) -> true).build());
             }
         } catch (KeyManagementException e) {
             logger.error("KeyManagementException in creating http client instance", e);
@@ -77,8 +74,34 @@ public class PIQueryClientImpl {
         return builder.build();
     }
 
-    public Results<Result> query(QualifiedPath path) {
-        return null;
+    public JsonArray queryAFServers() {
+
+        var a = new JsonArray();
+        var s1 = new JsonObject();
+        s1.addProperty("name", "AF Server 1");
+        a.add(s1);
+        return a;
+    }
+
+    public JsonArray queryPIServers() {
+        var a = new JsonArray();
+        var s1 = new JsonObject();
+        s1.addProperty("name", "PI Server 1");
+        a.add(s1);
+        return a;
+    }
+
+    public JsonArray queryAFPath(String path) {
+        var a = new JsonArray();
+        var s1 = new JsonObject();
+        s1.addProperty("name", "DIMS");
+        a.add(s1);
+        return a;
+    }
+
+    public Results<Result> query(QualifiedPath path) throws IOException, URISyntaxException, InterruptedException {
+
+       return null;
     }
 
     /***
@@ -131,7 +154,7 @@ public class PIQueryClientImpl {
      */
     private JsonElement postBatch(URI uri, JsonElement requests) throws IOException, InterruptedException {
 
-        //logger.info("Posting " + requests.toString() + " to " + batchUri.toString());
+        logger.debug("Posting " + requests.toString() + " to " + batchUri.toString());
         var request = new HttpPost(uri);
         //request.setHeader("Accept", "application/json");
         request.setHeader("Content-type", "application/json");
@@ -155,5 +178,31 @@ public class PIQueryClientImpl {
             throw new IOException(ex.getMessage());
         }
     }
+
+    private JsonElement getJson(URI uri) throws IOException, InterruptedException {
+
+        var request = new HttpGet(uri);
+        //request.setHeader("Accept", "application/json");
+        request.setHeader("Content-type", "application/json");
+
+        if (settings.getUsername() != "") {
+            var auth = new UsernamePasswordCredentials(settings.getUsername(), settings.getPassword());
+            try {
+                request.addHeader(new BasicScheme().authenticate(auth, request, null));
+            } catch (AuthenticationException e) {
+                logger.error("Error Setting Authentication, Trying without Authentication", e);
+            }
+        }
+
+        var response = httpClient.execute(request); //, HttpResponse.BodyHandlers.ofString());
+        try {
+            var content = new BasicResponseHandler().handleResponse(response);
+            return JsonParser.parseString(content);
+        } catch (HttpResponseException ex) {
+            logger.error("Invalid Response", ex);
+            throw new IOException(ex.getMessage());
+        }
+    }
+
 
 }

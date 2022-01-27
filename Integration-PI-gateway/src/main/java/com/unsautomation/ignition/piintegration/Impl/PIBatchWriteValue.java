@@ -1,4 +1,4 @@
-package com.unsautomation.ignition.piintegration.Internal;
+package com.unsautomation.ignition.piintegration.Impl;
 
 import com.inductiveautomation.ignition.gateway.history.HistoricalTagValue;
 import java.util.Date;

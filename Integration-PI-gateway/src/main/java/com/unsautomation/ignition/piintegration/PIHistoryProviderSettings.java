@@ -88,9 +88,9 @@ public class PIHistoryProviderSettings extends PersistentRecord {
         IgnoreSSLIssues = new BooleanField(META, "ignoreCertificateIssues").setDefault(false);
 
 
-        Connection = (new Category("PIHistoryProviderSettings.Category.Connection", 1, false)).include(new SFieldMeta[]{PIWebAPIUrl, Username, Password});
-        Storage = (new Category("PIHistoryProviderSettings.Category.Storage", 2, false)).include(new SFieldMeta[]{PIServer, PITagPrefix});
-        Advanced = (new Category("PIHistoryProviderSettings.Category.Advanced", 3, true)).include(new SFieldMeta[]{BrowsablePIServers, BrowsableAFServers, OnlyBrowsePITagsWithPrefix, IgnoreSSLIssues});
+        Connection = (new Category("Category.Connection", 1, false)).include(new SFieldMeta[]{PIWebAPIUrl, Username, Password});
+        Storage = (new Category("Category.Storage", 2, false)).include(new SFieldMeta[]{PIServer, PITagPrefix});
+        Advanced = (new Category("Category.Advanced", 3, true)).include(new SFieldMeta[]{BrowsablePIServers, BrowsableAFServers, OnlyBrowsePITagsWithPrefix, IgnoreSSLIssues});
     }
 
     @Override

@@ -1,4 +1,4 @@
-package com.unsautomation.ignition.piintegration.Internal;
+package com.unsautomation.ignition.piintegration.Impl;
 
 import com.google.gson.JsonElement;
 import java.util.HashMap;

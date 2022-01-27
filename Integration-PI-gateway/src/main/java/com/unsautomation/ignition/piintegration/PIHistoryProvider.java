@@ -9,6 +9,7 @@ import com.inductiveautomation.ignition.common.browsing.Results;
 import com.inductiveautomation.ignition.common.browsing.TagResult;
 import com.inductiveautomation.ignition.common.model.values.QualityCode;
 import com.inductiveautomation.ignition.common.sqltags.history.Aggregate;
+import com.inductiveautomation.ignition.common.sqltags.model.types.TagType;
 import com.inductiveautomation.ignition.common.util.Timeline;
 import com.inductiveautomation.ignition.common.util.TimelineSet;
 import com.inductiveautomation.ignition.gateway.model.GatewayContext;
@@ -17,6 +18,7 @@ import com.inductiveautomation.ignition.gateway.sqltags.history.TagHistoryProvid
 import com.inductiveautomation.ignition.gateway.sqltags.history.TagHistoryProviderInformation;
 import com.inductiveautomation.ignition.gateway.sqltags.history.query.ColumnQueryDefinition;
 import com.inductiveautomation.ignition.gateway.sqltags.history.query.QueryController;
+import com.unsautomation.ignition.piintegration.Impl.PIQueryClientImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,14 +34,16 @@ public class PIHistoryProvider implements TagHistoryProvider {
     private GatewayContext context;
     private PIHistoryProviderSettings settings;
     private PIHistorySink sink;
+    private final PIQueryClientImpl piClient;
     //private PIQueryClientImpl piClient; // A client for querying data
 
-    public PIHistoryProvider(GatewayContext context, String name, PIHistoryProviderSettings settings) {
-        logger.info("CTOR Provider");
+    public PIHistoryProvider(GatewayContext context, String name, PIHistoryProviderSettings settings) throws URISyntaxException {
+        logger.debug("PIHistoryProvider CTOR Provider");
         this.name = name;
         this.context = context;
         this.settings = settings;
-        //piClient = new PIQueryClientImpl(settings);
+        piClient = new PIQueryClientImpl(settings);
+
     }
 
     @Override
@@ -51,27 +55,11 @@ public class PIHistoryProvider implements TagHistoryProvider {
             context.getHistoryManager().registerSink(sink);
 
             // Create a PI client
-            ConnectToPI();
+            //ConnectToPI();
 
         } catch (Throwable e) {
             logger.error("Error registering PI history sink", e);
         }
-    }
-
-    public void ConnectToPI() throws URISyntaxException {
-        /*String clusterURL = settings.getClusterURL();
-        String applicationId = settings.getApplicationId();
-        String applicationKey = settings.getApplicationKey();
-        String aadTenantId = settings.getAADTenantId();
-*/
-        //ConnectionStringBuilder connectionString;
-
-        //connectionString = ConnectionStringBuilder.createWithAadApplicationCredentials(
-        //        clusterURL,
-        //        applicationId,
-        //        applicationKey,
-        //        aadTenantId);
-
     }
 
     @Override
@@ -127,24 +115,237 @@ public class PIHistoryProvider implements TagHistoryProvider {
      */
     @Override
     public Results<Result> browse(QualifiedPath qualifiedPath, BrowseFilter browseFilter) {
-        logger.debug("browse(qualifiedPath, browseFilter) called.  qualifiedPath: " + qualifiedPath.toString()
+        logger.info("browse(qualifiedPath, browseFilter) called.  qualifiedPath: " + qualifiedPath.toString()
                 + ", browseFilter: " + (browseFilter == null ? "null" : browseFilter.toString()));
 
+        var tagPath = qualifiedPath.getPathComponent(WellKnownPathTypes.Tag);
+        var histProv = qualifiedPath.getPathComponent(WellKnownPathTypes.HistoryProvider);
+        var system = qualifiedPath.getPathComponent(WellKnownPathTypes.System);
+        var driver = qualifiedPath.getPathComponent(WellKnownPathTypes.Driver);
+
+        var result = new Results<Result>();
+        var list = new ArrayList<Result>();
+
+        if (null == tagPath) {
+
+
+            logger.info("Browsing Root Level");
+            var assets = new TagResult();
+            var p = QualifiedPathUtils.toPathFromHistoricalString("[" + histProv + "]Assets");
+
+            assets.setType(WellKnownPathTypes.Tag);
+          /*  var p = new QualifiedPath.Builder()
+                    .setProvider(histProv)
+                    .setTag("Assets") // Can we use driver here? (and is there a good explanation of tag parts somewhere?
+
+                    .build(); */
+            assets.setHasChildren(true);
+            assets.setPath(p);
+            //assets.setType(TagType.Folder.name());
+            //assets.setDisplayPath(p);
+
+            list.add(assets);
+
+            var points = new TagResult();
+            var p2 = QualifiedPathUtils.toPathFromHistoricalString("[" + histProv + "]Points");
+
+
+            /*var p2 = new QualifiedPath.Builder()
+                    .setProvider(histProv)
+                    .setDriver("LORT")
+                    .setUser("TEST2")
+                    .setTag("Points") // Can we use driver here? (and is there a good explanation of tag parts somewhere?
+                    .build(); */
+            points.setType(WellKnownPathTypes.Tag);
+            points.setHasChildren(true);
+            points.setPath(p2);
+
+            //points.setType(TagType.Folder.name());
+            //points.setDisplayPath(p);
+
+            list.add(points);
+
+        } else if ("Assets" == tagPath) {
+            //for (var server : piClient.queryAFServers()) {
+                var afServer = new TagResult();
+                var p = new QualifiedPath.Builder()
+                        .setProvider(histProv)
+                        .setTag("Assets/DBNAME") // Can we use driver here? (and is there a good explanation of tag parts somewhere?
+                        .setDriver("LORT")
+                        .build();
+                afServer.setHasChildren(true);
+                afServer.setPath(p);
+                list.add(afServer);
+            //};
+        }  else if ("Points" == tagPath) {
+            //for (var server : piClient.queryPIServers()) {
+                var afServer = new TagResult();
+                var p = new QualifiedPath.Builder()
+                        .setProvider(histProv)
+                        .setTag("Assets/DBNAME") // Can we use driver here? (and is there a good explanation of tag parts somewhere?
+                        .setDriver("LORT")
+                        .build();
+                afServer.setHasChildren(true);
+                afServer.setPath(p);
+                afServer.setType(TagType.Folder.name());
+                list.add(afServer);
+            //};
+        }
+
+        result.setResults(list);
+        //result.setTotalAvailableResults(list.size());
+        result.setResultQuality(QualityCode.Good);
+        return result;
+        /*
+        if (tagPath == null && system == null) {
+            logger.info("Browsing Root");
+
+            // Root Level
+            TagResult af;
+            /*var a = new QualifiedPath.Builder()
+                    .setProvider(histProv)
+                   // .setSystem("AF")
+                    .setTag("AF")
+                    .build();
+            //af.setPath(a);
+            af.setType("Tag");
+
+            af.setHasChildren(true);
+            af = new TagResult();
+            af.setType("folder");
+            af.setHasChildren(true);
+            QualifiedPath fullTagPath = QualifiedPathUtils.toPathFromHistoricalString("[" + histProv + "]Points");
+            af.setPath(fullTagPath);
+            list.add(af);
+
+            af = new TagResult();
+            af.setType("folder");
+            af.setHasChildren(true);
+            fullTagPath = QualifiedPathUtils.toPathFromHistoricalString("[" + histProv + "]Assets");
+            af.setPath(fullTagPath);
+            list.add(af);
+
+
+            /*
+            TagResult pi = new TagResult();
+            var p = new QualifiedPath.Builder()
+                    .setProvider(histProv)
+                    .setTag("PI")
+                    //.setSystem("PI")
+                    .build();
+            pi.setPath(p);
+            af.setType("Tag");
+
+            pi.setHasChildren(true);
+            list.add(pi);
+
+
+
+        }else if (tagPath != null && tagPath.startsWith("Assets")) {
+
+            logger.info("Browsing AF Servers");
+
+            var url = settings.getWebAPIUrl() + "/assetservers/?selectedFields=Name;Path;IsConnected";
+            var assetServers = getJson(new URI(url));
+            if (assetServers.isJsonObject()) {
+                var as = assetServers.getAsJsonObject();
+                if (as.has("Items")) {
+                    for (var assetServer : as.get("Items").getAsJsonArray()) {
+                        TagResult pi = new TagResult();
+                        var p = new QualifiedPath.Builder()
+                                .setProvider(histProv)
+                                .setDriver(driver)
+                                .setSystem("AF")
+                                .setTag(assetServer.getAsJsonObject().getAsJsonPrimitive("Path").getAsString())
+                                .build();
+                        pi.setPath(p);
+                        //pi.setType(TagType.Folder.name());
+
+                        pi.setHasChildren(true);
+                        list.add(pi);
+                    }
+                } else {
+                    // TODO: Check if there is an error attribute
+                    throw new IOException("Invalid Response trying to get asset servers");
+                }
+
+
+            }
+
+            var piUrl = settings.getWebAPIUrl() + "/assetservers/?selectedFields=Name;Path;IsConnected";
+            var piArchivers = getJson(new URI(url));
+            if (assetServers.isJsonObject()) {
+                var as = assetServers.getAsJsonObject();
+                if (as.has("Items")) {
+                    for (var assetServer : as.get("Items").getAsJsonArray()) {
+                        TagResult pi = new TagResult();
+                        var p = new QualifiedPath.Builder()
+                                .setDriver(histProv)
+                                .setDriver(driver)
+                                .setSystem("AF")
+
+                                .setTag(assetServer.getAsJsonObject().getAsJsonPrimitive("Path").getAsString())
+                                .build();
+                        pi.setPath(p);
+                        //pi.setType(TagType.Folder.name());
+                        pi.setHasChildren(true);
+                        list.add(pi);
+                    }
+                } else {
+                    // TODO: Check if there is a error attribute
+                    throw new IOException("Invalid Response trying to get asset servers");
+                }
+
+
+            }
+
+
+
+
+        } else if (tagPath != null && tagPath.startsWith("Points")) {
+            var af = new TagResult();
+            af.setType("tag");
+            af.setHasChildren(false);
+            QualifiedPath fullTagPath = QualifiedPathUtils.toPathFromHistoricalString("[" + histProv + ":default]PI/Funky!!!");
+            af.setPath(fullTagPath);
+            list.add(af);
+        }
+        result.setResults(list);
+        result.setTotalAvailableResults(list.size());
+        result.setResultQuality(QualityCode.Good);
+        return result;
+        /*
+        Results<Result> result = new Results<Result>();
+
+        ArrayList<Result> list = new ArrayList();
+        var histProv = qualifiedPath.getPathComponent(WellKnownPathTypes.HistoryProvider);
+        TagResult pi = new TagResult();
+        pi.setType("tag");
+        pi.setHasChildren(true);
+        QualifiedPath fullTagPath = QualifiedPathUtils.toPathFromHistoricalString("[" + histProv + ":default]AF");
+        pi.setPath(fullTagPath);
+        list.add(pi);
+
+
+
+
+/*
+
+        //
         // [Tag Provider]folder/path/tag.property
 
         // qualifiedPath: histprov:HAHAH,
         // browseFilter: BrowseFilter{allowedTypes=null, nameFilters=null, properties={}, excludeProperties=null, maxResults=-1, offset=-1, continuationPoint='null', recursive=false}
-        ArrayList<Result> list = new ArrayList();
-        String histProv = qualifiedPath.getPathComponent(WellKnownPathTypes.HistoryProvider);
+       //String histProv = qualifiedPath.getPathComponent(WellKnownPathTypes.HistoryProvider);
         String systemName = null;
         String tagProvider = null;
-        String driver = qualifiedPath.getPathComponent(WellKnownPathTypes.Driver);
+        //String driver = qualifiedPath.getPathComponent(WellKnownPathTypes.Driver);
         if (driver != null) {
             String[] parts = driver.split(":");
             systemName = parts[0];
             tagProvider = parts[1];
         }
-        String tagPath = qualifiedPath.getPathComponent(WellKnownPathTypes.Tag);
+
 
         logger.info("provider: '" + histProv +
                 ",  driver: '" + driver +
@@ -152,7 +353,6 @@ public class PIHistoryProvider implements TagHistoryProvider {
                 "', tagProvider: '" + tagProvider +
                 "', tagPath: '" + tagPath);
 
-        Results<Result> result = new Results<Result>();
 
 
         if (systemName == null) {
@@ -160,7 +360,7 @@ public class PIHistoryProvider implements TagHistoryProvider {
             TagResult af = new TagResult();
             af.setType("tag");
             af.setHasChildren(true);
-            QualifiedPath fullTagPath = QualifiedPathUtils.toPathFromHistoricalString("[" + histProv + "/pi:default]");
+            QualifiedPath fullTagPath = QualifiedPathUtils.toPathFromHistoricalString("[" + histProv + "/default]");
             af.setPath(fullTagPath);
             list.add(af);
 
@@ -180,13 +380,15 @@ public class PIHistoryProvider implements TagHistoryProvider {
             QualifiedPath fullTagPath = QualifiedPathUtils.toPathFromHistoricalString("[" + histProv + "/pi:default]TEST");
             pi.setPath(fullTagPath);
             list.add(pi);
-        }
+        }*/
 
 
 
 
-        result.setResults(list);
+       /* result.setResults(list);
+        result.setTotalAvailableResults(list.size());
         result.setResultQuality(QualityCode.Good);
+        return result; */
         // FIXME: First one to implement
 
         /*ArrayList<Result> list = new ArrayList<>();
@@ -251,8 +453,8 @@ public class PIHistoryProvider implements TagHistoryProvider {
         result.setResults(list);
 
        //result.setResultQuality((Quality.GOOD);)*/
-        result.setTotalAvailableResults(0);
-        return result;
+        //result.setTotalAvailableResults(0);
+        //return null;
     }
 
     @Override

@@ -1,10 +1,11 @@
 /Users/thomassorensen/Documents/Code/ignition-PI/Igntion-Integration-PI/Integration-PI-gateway/src/main/java/com/unsautomation/ignition/piintegration/PIHistoryProviderSettings.java
-/Users/thomassorensen/Documents/Code/ignition-PI/Igntion-Integration-PI/Integration-PI-gateway/src/main/java/com/unsautomation/ignition/piintegration/Internal/batchResponseResult.java
+/Users/thomassorensen/Documents/Code/ignition-PI/Igntion-Integration-PI/Integration-PI-gateway/src/main/java/com/unsautomation/ignition/piintegration/Impl/BatchRequestBuilder.java
+/Users/thomassorensen/Documents/Code/ignition-PI/Igntion-Integration-PI/Integration-PI-gateway/src/main/java/com/unsautomation/ignition/piintegration/Impl/batchResponseResult.java
 /Users/thomassorensen/Documents/Code/ignition-PI/Igntion-Integration-PI/Integration-PI-gateway/src/main/java/com/unsautomation/ignition/piintegration/PIHistoryProviderType.java
 /Users/thomassorensen/Documents/Code/ignition-PI/Igntion-Integration-PI/Integration-PI-gateway/src/main/java/com/unsautomation/ignition/piintegration/PIHistorySink.java
-/Users/thomassorensen/Documents/Code/ignition-PI/Igntion-Integration-PI/Integration-PI-gateway/src/main/java/com/unsautomation/ignition/piintegration/Internal/PIQueryClientImpl.java
+/Users/thomassorensen/Documents/Code/ignition-PI/Igntion-Integration-PI/Integration-PI-gateway/src/main/java/com/unsautomation/ignition/piintegration/Impl/PIWebAPIBatchWrite.java
 /Users/thomassorensen/Documents/Code/ignition-PI/Igntion-Integration-PI/Integration-PI-gateway/src/main/java/com/unsautomation/ignition/piintegration/PIQueryExecutor.java
 /Users/thomassorensen/Documents/Code/ignition-PI/Igntion-Integration-PI/Integration-PI-gateway/src/main/java/com/unsautomation/ignition/GatewayHook.java
+/Users/thomassorensen/Documents/Code/ignition-PI/Igntion-Integration-PI/Integration-PI-gateway/src/main/java/com/unsautomation/ignition/piintegration/Impl/PIQueryClientImpl.java
 /Users/thomassorensen/Documents/Code/ignition-PI/Igntion-Integration-PI/Integration-PI-gateway/src/main/java/com/unsautomation/ignition/piintegration/PIHistoryProvider.java
-/Users/thomassorensen/Documents/Code/ignition-PI/Igntion-Integration-PI/Integration-PI-gateway/src/main/java/com/unsautomation/ignition/piintegration/Internal/PIBatchWriteValue.java
-/Users/thomassorensen/Documents/Code/ignition-PI/Igntion-Integration-PI/Integration-PI-gateway/src/main/java/com/unsautomation/ignition/piintegration/Internal/PIWebAPIBatchWrite.java
+/Users/thomassorensen/Documents/Code/ignition-PI/Igntion-Integration-PI/Integration-PI-gateway/src/main/java/com/unsautomation/ignition/piintegration/Impl/PIBatchWriteValue.java

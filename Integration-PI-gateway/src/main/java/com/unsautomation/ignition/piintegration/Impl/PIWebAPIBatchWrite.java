@@ -1,5 +1,6 @@
-package com.unsautomation.ignition.piintegration.Internal;
+package com.unsautomation.ignition.piintegration.Impl;
 
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -53,21 +54,47 @@ public class PIWebAPIBatchWrite {
                 var value = entry.getValue().getAsJsonObject();
                 var key = entry.getKey();
                 var status = value.has("Status") ? value.get("Status").getAsInt() : 0;
-                var content = value.has("Content") && value.get("Content").isJsonPrimitive() ? value.get("Content").getAsString() : null;
 
-                if (key.startsWith("w_") && (status > 300 || status < 200)) {
+                //
+                //var content = value.has("Content") && value.get("Content").isJsonPrimitive() ? value.get("Content").getAsString() : null;
+
+                var gson = new GsonBuilder().create();
+                var content =value.get("Content").isJsonPrimitive() ? value.get("Content").getAsString() : gson.toJson(value.get("Content"));
+
+                if ((status > 300 || status < 200)) {
+
+                    if (key.contains("_")) {
+                        int id = Integer.parseInt(key.split("_")[1]);
+                        var tagName = getTagForId(id);
+
+                        if (key.startsWith("w") && content != null && content.startsWith("Some JSON paths did not select any tokens")) {
+                            r.addTagNotFound(tagName, writes.get(tagName));
+                        } else if (content != null) {
+                            // Unknown error which is not caused by tag not found.....
+                            logger.error(content.toString());
+                            r.addError(tagName, writes.get(tagName));
+                        } else if (content != null)
+                            // ERROR with GetArchiver
+                            logger.error(content.toString());
+                    }
+                } else if (status == 207 && value.get("Content").isJsonObject()) {
+                    // Message will have sub statues
+                    var c = value.get("Content").getAsJsonObject();
                     int id = Integer.parseInt(key.split("_")[1]);
-
                     var tagName = getTagForId(id);
+                    if (c.has("Items") && c.get("Items").isJsonArray()) {
+                        var items = c.get("Items").getAsJsonArray();
+                        for (var i : items) {
+                            var item = i.getAsJsonObject();
+                            var subStatus = item.has("Substatus") ? item.get("Substatus").getAsInt() : 200;
+                            var message = item.has("Message") ? item.get("Message").getAsString() : "Unknown error writing Data Value";
+                            if (subStatus > 299) {
+                                logger.error(message);
+                                r.addError(tagName, writes.get(tagName));
+                                // TODO: FIXME
+                            }
+                        }
 
-                    if (content != null && content.startsWith("Some JSON paths did not select any tokens")) {
-                        r.addTagNotFound(tagName, writes.get(tagName));
-                    }else if (content != null){
-                        logger.error(content.toString());
-                        r.addError(tagName, writes.get(tagName));
-                    } else {
-                        logger.debug("Unknown Error");
-                        r.addError(tagName, writes.get(tagName));
                     }
                 }
             }
@@ -81,7 +108,7 @@ public class PIWebAPIBatchWrite {
 
         var requests =  new JsonObject();
         var gerArchiverUrl = String.format("%s/dataservers/?name=%s", url , piArchiver);
-        var getArchiver = buildBatchItem(gerArchiverUrl, "GET", "", "", null);
+        var getArchiver = buildBatchItem(gerArchiverUrl, "GET", "", "", null, false);
         requests.add("GetArchiverID", getArchiver);
 
         // Create Map of <TagName, array<value>
@@ -94,15 +121,15 @@ public class PIWebAPIBatchWrite {
                 logger.info("Creating tag" + tagName);
                 var tagDetails = new JsonObject();
                 tagDetails.addProperty("Name", tagName);
-                tagDetails.addProperty("PointType", values.get(0).getDataType());
+                tagDetails.addProperty("PointType", "Int32"); //values.get(0).getDataType());
                 tagDetails.addProperty("EngineeringUnits", "");
                 tagDetails.addProperty("PointClass", "classic");
 
-                var createTag = buildBatchItem("{0}/points/", "POST", "GetArchiverID", "$.GetArchiverID.Content.Links.Self", tagDetails);
+                var createTag = buildBatchItem("{0}/points/", "POST", "GetArchiverID", "$.GetArchiverID.Content.Links.Self", tagDetails, true);
                 requests.add("t_" + writeId, createTag);
             } else {
-                var getTagUrl = "{0}/points/?nameFilter=" + piArchiver;
-                var getTag = buildBatchItem(getTagUrl, "GET", "GetArchiverID", "$.GetArchiverID.Content.Links.Self", null);
+                var getTagUrl = "{0}/points/?nameFilter=" + tagName;
+                var getTag = buildBatchItem(getTagUrl, "GET", "GetArchiverID", "$.GetArchiverID.Content.Links.Self", null, true);
                 requests.add("t_" + writeId, getTag);
             }
             tagIdMap.put(tagName, writeId);
@@ -113,16 +140,17 @@ public class PIWebAPIBatchWrite {
             for (var val : values) {
                 var j = new JsonObject();
                 j.addProperty("Value", val.getValue().toString());
-                j.addProperty("Timestamp", val.getTimestamp().toString()); //FIXME : Is Epic or Zule the right way to send data
+                j.addProperty("Timestamp", val.getTimestamp().toInstant().toString()); //FIXME : Is Epic or Zule the right way to send data
                 //j.addProperty("Good", record.getQuality().isGood());
                 tagWrites.add(j);
             }
 
-            var param = create ? "$.t_${idx}.Headers.Location" :
+            var param = create ? "$.t_" + writeId + ".Headers.Location" :
                     "$.t_" + writeId +".Content.Items[0].Links.RecordedData";
             // Write Tag Request
-            var writeTagUrl = "{0}?bufferOption=Buffer";
-            var writeTag = buildBatchItem(writeTagUrl, "POST","t_" + writeId, param, tagWrites);
+            var buffer = false;
+            var writeTagUrl = buffer ? "{0}?bufferOption=Buffer" : "{0}";
+            var writeTag = buildBatchItem(writeTagUrl, "POST","t_" + writeId, param, tagWrites, false);
             requests.add("w_" + writeId, writeTag);
             //writeMap.put(tagId, val);
         }
@@ -138,7 +166,7 @@ public class PIWebAPIBatchWrite {
         throw new IOException("Tag for id '" + id + "' not found");
     }
 
-    private JsonObject buildBatchItem(String resource, String method, String parentId, String parameter, JsonElement content) {
+    private JsonObject buildBatchItem(String resource, String method, String parentId, String parameter, JsonElement content, boolean disableCache) {
         var rtn = new JsonObject();
         rtn.addProperty("Resource", resource);
         rtn.addProperty("Method", method);
@@ -156,7 +184,15 @@ public class PIWebAPIBatchWrite {
         }
 
         if(content != null) {
-            rtn.add("Content", content);
+            var gson = new GsonBuilder().create();
+            var c = gson.toJson(content);
+            rtn.addProperty("Content", c);
+        }
+
+        if (disableCache) {
+            var x = new JsonObject();
+            x.addProperty("Cache-Control", "no-cache");
+            rtn.add("Headers", x);
         }
         return rtn;
     }

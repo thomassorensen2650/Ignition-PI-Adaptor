@@ -5,7 +5,7 @@ import com.inductiveautomation.ignition.gateway.sqltags.history.query.ColumnQuer
 import com.inductiveautomation.ignition.gateway.sqltags.history.query.HistoryNode;
 import com.inductiveautomation.ignition.gateway.sqltags.history.query.HistoryQueryExecutor;
 import com.inductiveautomation.ignition.gateway.sqltags.history.query.QueryController;
-import com.unsautomation.ignition.piintegration.Internal.PIQueryClientImpl;
+import com.unsautomation.ignition.piintegration.Impl.PIQueryClientImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

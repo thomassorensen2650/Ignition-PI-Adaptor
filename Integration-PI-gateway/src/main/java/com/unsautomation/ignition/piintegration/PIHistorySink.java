@@ -4,13 +4,12 @@ import com.inductiveautomation.ignition.common.StatMetric;
 import com.inductiveautomation.ignition.common.i18n.LocalizedString;
 import com.inductiveautomation.ignition.gateway.history.*;
 import com.inductiveautomation.ignition.gateway.model.GatewayContext;
-import com.unsautomation.ignition.piintegration.Internal.PIQueryClientImpl;
+import com.unsautomation.ignition.piintegration.Impl.PIQueryClientImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -25,21 +24,20 @@ public class PIHistorySink implements DataSink {
     private PIHistoryProviderSettings settings; // Holds the settings for the current provider, needed to connect to ADX
     private GatewayContext context;
     private String pipelineName;
-    private String table;
-    private String database;
+   // private String table;
+    //private String database;
 
     private PIQueryClientImpl piClient;
-    private final SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSSSSS");
+   //private final SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSSSSS");
 
    //private IngestionProperties ingestionProperties;
 
     public PIHistorySink(String pipelineName, GatewayContext context, PIHistoryProviderSettings settings) throws URISyntaxException {
         piClient = new PIQueryClientImpl(settings);
-        logger.info("Starting Sink...:)");
         this.pipelineName = pipelineName;
         this.context = context;
         this.settings = settings;
-        logger.info("Started with Pipeline: '" + pipelineName + "'");
+        logger.debug("Started Sink with Pipeline: '" + pipelineName + "'");
 
     }
 
@@ -148,7 +146,13 @@ public class PIHistorySink implements DataSink {
                 records.add(dValue);
             }
         }
-        piClient.ingestRecords(records);
+        var errors = piClient.ingestRecords(records);
+
+        if (errors.size() > 0) {
+            throw new IOException(errors.size() + " Errors Occurred while Ingesting data to PI");
+        }else {
+            logger.info("Ingest Without Issue.!");
+        }
 
     }
 
