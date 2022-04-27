@@ -80,7 +80,27 @@ public class PIQueryClientImpl {
         var s1 = new JsonObject();
         s1.addProperty("name", "AF Server 1");
         a.add(s1);
+
+        var s2 = new JsonObject();
+        s2.addProperty("name", "AF Server 2");
+        a.add(s2);
+
         return a;
+    }
+
+    public JsonArray queryPath(String path) {
+
+        var a = new JsonArray();
+        var s1 = new JsonObject();
+        s1.addProperty("name", "Root Level 1");
+        a.add(s1);
+
+        var s2 = new JsonObject();
+        s2.addProperty("name", "Root Level 2");
+        a.add(s2);
+
+        return a;
+
     }
 
     public JsonArray queryPIServers() {
@@ -88,6 +108,11 @@ public class PIQueryClientImpl {
         var s1 = new JsonObject();
         s1.addProperty("name", "PI Server 1");
         a.add(s1);
+
+        var s2 = new JsonObject();
+        s2.addProperty("name", "PI Server 2");
+        a.add(s2);
+
         return a;
     }
 
@@ -203,6 +228,7 @@ public class PIQueryClientImpl {
             throw new IOException(ex.getMessage());
         }
     }
+
 
 
 }

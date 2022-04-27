@@ -9,7 +9,6 @@ import com.inductiveautomation.ignition.common.browsing.Results;
 import com.inductiveautomation.ignition.common.browsing.TagResult;
 import com.inductiveautomation.ignition.common.model.values.QualityCode;
 import com.inductiveautomation.ignition.common.sqltags.history.Aggregate;
-import com.inductiveautomation.ignition.common.sqltags.model.types.TagType;
 import com.inductiveautomation.ignition.common.util.Timeline;
 import com.inductiveautomation.ignition.common.util.TimelineSet;
 import com.inductiveautomation.ignition.gateway.model.GatewayContext;
@@ -165,31 +164,61 @@ public class PIHistoryProvider implements TagHistoryProvider {
 
             list.add(points);
 
-        } else if ("Assets" == tagPath) {
-            //for (var server : piClient.queryAFServers()) {
-                var afServer = new TagResult();
+        } else if (tagPath.equals("Assets")) {
+            for (var afServer : piClient.queryAFServers()) {
+                var name = afServer.getAsJsonObject().get("name").getAsString();
+                var server = new TagResult();
+
                 var p = new QualifiedPath.Builder()
                         .setProvider(histProv)
-                        .setTag("Assets/DBNAME") // Can we use driver here? (and is there a good explanation of tag parts somewhere?
-                        .setDriver("LORT")
+                        .setTag(tagPath + "/" + name) // Can we use driver here? (and is there a good explanation of tag parts somewhere?
                         .build();
-                afServer.setHasChildren(true);
-                afServer.setPath(p);
-                list.add(afServer);
-            //};
-        }  else if ("Points" == tagPath) {
+                //p = QualifiedPathUtils.toPathFromHistoricalString("[" + histProv + "]Assets/"+name);
+
+                p = qualifiedPath.replace(WellKnownPathTypes.Tag, tagPath + "/" + name);
+                server.setHasChildren(true);
+                server.setPath(p);
+                server.setType(WellKnownPathTypes.Tag);
+                list.add(server);
+            }
+        }  else if (tagPath.equals("Points")) {
             //for (var server : piClient.queryPIServers()) {
-                var afServer = new TagResult();
+            for (var afServer : piClient.queryPIServers()) {
+                var name = afServer.getAsJsonObject().get("name").getAsString();
+                var server = new TagResult();
                 var p = new QualifiedPath.Builder()
                         .setProvider(histProv)
-                        .setTag("Assets/DBNAME") // Can we use driver here? (and is there a good explanation of tag parts somewhere?
-                        .setDriver("LORT")
+                        .setTag(tagPath + "/" + name) // Can we use driver here? (and is there a good explanation of tag parts somewhere?
                         .build();
-                afServer.setHasChildren(true);
-                afServer.setPath(p);
-                afServer.setType(TagType.Folder.name());
-                list.add(afServer);
+                server.setHasChildren(true);
+                server.setPath(p);
+                server.setType(WellKnownPathTypes.Tag);
+                list.add(server);
+            }
+
             //};
+        } else if (tagPath.startsWith("Assets")) {
+
+            for (var afServer : piClient.queryPath(tagPath)) {
+                var name = afServer.getAsJsonObject().get("name").getAsString();
+                var server = new TagResult();
+                var p = new QualifiedPath.Builder()
+                        .setProvider(histProv)
+                        .setTag(tagPath + "/" + name) // Can we use driver here? (and is there a good explanation of tag parts somewhere?
+                        .build();
+                //p = QualifiedPathUtils.toPathFromHistoricalString(tagPath+"/"+name);
+                p = qualifiedPath.replace(WellKnownPathTypes.Tag, tagPath + "/" + name);
+                server.setHasChildren(true);
+                server.setPath(p);
+                server.setType(WellKnownPathTypes.Tag);
+                list.add(server);
+            }
+
+
+            // Browse specific Path on AF Server
+        } else if (tagPath.startsWith("Points")) {
+            // Browse specific Path on AF Server
+
         }
 
         result.setResults(list);
