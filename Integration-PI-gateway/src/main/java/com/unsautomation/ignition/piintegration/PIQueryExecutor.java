@@ -1,17 +1,21 @@
 package com.unsautomation.ignition.piintegration;
 
+import com.google.gson.JsonObject;
+import com.inductiveautomation.ignition.common.WellKnownPathTypes;
+import com.inductiveautomation.ignition.common.model.values.BasicQualifiedValue;
+import com.inductiveautomation.ignition.common.sqltags.model.types.DataQuality;
+import com.inductiveautomation.ignition.common.sqltags.model.types.DataTypeClass;
 import com.inductiveautomation.ignition.gateway.model.GatewayContext;
-import com.inductiveautomation.ignition.gateway.sqltags.history.query.ColumnQueryDefinition;
-import com.inductiveautomation.ignition.gateway.sqltags.history.query.HistoryNode;
-import com.inductiveautomation.ignition.gateway.sqltags.history.query.HistoryQueryExecutor;
-import com.inductiveautomation.ignition.gateway.sqltags.history.query.QueryController;
-import com.unsautomation.ignition.piintegration.Impl.PIQueryClientImpl;
+import com.inductiveautomation.ignition.gateway.sqltags.history.query.*;
+import com.inductiveautomation.ignition.gateway.sqltags.history.query.columns.ProcessedHistoryColumn;
+import com.inductiveautomation.metro.utils.StringUtils;
+import com.unsautomation.ignition.piintegration.piwebapi.PIWebApiClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URISyntaxException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 /**
@@ -26,23 +30,27 @@ public class PIQueryExecutor  implements HistoryQueryExecutor {
     private GatewayContext context;
     private PIHistoryProviderSettings settings; // Holds the settings for the current provider, needed to connect to ADX
     private QueryController controller; // Holds the settings for what the user wants to query
-    private List<ColumnQueryDefinition> tagDefs; // Holds the definition of each tag
-    //private Map<AzureKustoTag, AzureKustoHistoryTag> tags; // The list of tags to return with data
+    private List<ColumnQueryDefinition> paths; // Holds the definition of each tag
+    protected List<DelegatingHistoryNode> nodes = new ArrayList();
+    protected List<ProcessedHistoryColumn> tags;
+    protected JsonObject queryResult;
 
-    //private ConnectionStringBuilder connectionString;
-    private PIQueryClientImpl piClient; // A client for querying data
+    private PIWebApiClient piClient; // A client for querying data
 
     boolean processed = false;
     long maxTSInData = -1;
 
-    public PIQueryExecutor(GatewayContext context, PIHistoryProviderSettings settings, List<ColumnQueryDefinition> tagDefs, QueryController controller) throws URISyntaxException {
+    public PIQueryExecutor(PIWebApiClient client, GatewayContext context, PIHistoryProviderSettings settings, List<ColumnQueryDefinition> tagDefs, QueryController controller) throws URISyntaxException {
         this.context = context;
         this.settings = settings;
         this.controller = controller;
-        this.tagDefs = tagDefs;
-        piClient = new PIQueryClientImpl(settings);
-        //this.tags = new HashMap<>();
+        this.paths = tagDefs;
+        this.piClient = client;
+        this.tags = new ArrayList<>();
 
+        for (var def : paths) {
+            this.nodes.add(new DelegatingHistoryNode(def.getColumnName()));
+        }
         initTags();
     }
 
@@ -51,32 +59,29 @@ public class PIQueryExecutor  implements HistoryQueryExecutor {
      * that provides the fully qualified tag path, aggregation function, and tag to return.
      */
     private void initTags() {
-       /* boolean isRaw = controller.getBlockSize() <= 0;
+        boolean isRaw = controller.getBlockSize() <= 0;
 
-        for (ColumnQueryDefinition c : tagDefs) {
-            HistoryNode historyTag;
+        for (ColumnQueryDefinition c : paths) {
+            var qPath = c.getPath();
 
-            QualifiedPath qPath = c.getPath();
-            String driver = qPath.getPathComponent(WellKnownPathTypes.Driver);
-            String[] parts = driver.split(":");
-            String systemName = parts[0];
-            String tagProvider = parts[1];
             String tagPath = qPath.getPathComponent(WellKnownPathTypes.Tag);
 
-            AzureKustoTag tag = new AzureKustoTag(systemName, tagProvider, tagPath);
+            //AzureKustoTag tag = new AzureKustoTag(systemName, tagProvider, tagPath);
 
             if (StringUtils.isBlank(tagPath)) {
                 // We set the data type to Integer here, because if the column is going to be errored, at least integer types won't cause charts to complain.
-                historyTag = new ErrorHistoryColumn(c.getColumnName(), DataTypeClass.Integer, DataQuality.CONFIG_ERROR);
+                //historyTag = new ErrorHistoryColumn(c.getColumnName(), DataTypeClass.Integer, DataQuality.CONFIG_ERROR);
                 logger.debug(controller.getQueryId() + ": The item path '" + c.getPath() + "' does not have a valid tag path component.");
             } else {
-                historyTag = new ProcessedHistoryColumn(c.getColumnName(), isRaw);
+                ProcessedHistoryColumn historyTag = new ProcessedHistoryColumn(c.getColumnName(), isRaw);
                 // Set data type to float by default, we can change this later if needed
-                ((ProcessedHistoryColumn) historyTag).setDataType(DataTypeClass.Float);
+                historyTag.setDataType(DataTypeClass.Float);
+                tags.add(historyTag);
+
             }
 
-            tags.put(tag, new AzureKustoHistoryTag(tag, c.getAggregate(), historyTag));
-        }*/
+            //tags.put(tag, new AzureKustoHistoryTag(tag, c.getAggregate(), historyTag));
+        }
     }
 
     /**
@@ -85,9 +90,7 @@ public class PIQueryExecutor  implements HistoryQueryExecutor {
     @Override
     public List<? extends HistoryNode> getColumnNodes() {
         List<HistoryNode> nodes = new ArrayList<>();
-       // for (AzureKustoTag tag : tags.keySet()) {
-        //    nodes.add(tags.get(tag).getHistoryTag());
-       // }
+        nodes.addAll(tags);
         return nodes;
     }
 
@@ -96,18 +99,6 @@ public class PIQueryExecutor  implements HistoryQueryExecutor {
      */
     @Override
     public void initialize() throws Exception {
-       /* String clusterURL = settings.getClusterURL();
-        String applicationId = settings.getApplicationId();
-        String applicationKey = settings.getApplicationKey();
-        String aadTenantId = settings.getAADTenantId();
-*/
-        /*connectionString = ConnectionStringBuilder.createWithAadApplicationCredentials(
-                clusterURL,
-                applicationId,
-                applicationKey,
-                aadTenantId);*/
-
-
     }
 
     @Override
@@ -121,67 +112,50 @@ public class PIQueryExecutor  implements HistoryQueryExecutor {
      */
     @Override
     public void startReading() throws Exception {
-        int blockSize = (int) controller.getBlockSize();
-        Date startDate = controller.getQueryParameters().getStartDate();
-        Date endDate = controller.getQueryParameters().getEndDate();
+        var blockSize = (int) controller.getBlockSize();
+        var startDate = controller.getQueryParameters().getStartDate();
+        var endDate = controller.getQueryParameters().getEndDate();
 
         logger.debug("startReading(blockSize, startDate, endDate) called.  blockSize: " + blockSize
                 + ", startDate: " + startDate.toString() + ", endDate: " + endDate.toString());
-/*
-        String queryPrefix =
-                "let blocks = " + blockSize + ";\n" +
-                        "let startTime = " + Utils.getDateLiteral(startDate) + ";\n" +
-                        "let endTime = " + Utils.getDateLiteral(endDate) + ";\n";
-        String queryData = settings.getTableName() + "| where timestamp between(startTime..endTime) ";
 
-        queryData += "| where ";
-        AzureKustoTag[] tagKeys = tags.keySet().toArray(new AzureKustoTag[]{});
-        for (int i = 0; i < tagKeys.length; i++) {
-            AzureKustoTag tag = tagKeys[i];
-            queryData += "(systemName has \"" + tag.getSystemName() + "\" and tagProvider has \"" + tag.getTagProvider() + "\" and tagPath has \"" + tag.getTagPath() + "\")";
-            if (i < (tagKeys.length - 1)) {
-                queryData += " or ";
+        for (int i = 0; i < paths.size() ; i++) {
+            var t = paths.get(i).getPath();
+            queryResult = piClient.getStream().getPlot(t.toString(), startDate, endDate, 100, null,null,null);
+            var dataValues = queryResult.get("Items").getAsJsonArray();
+            for (var dv : dataValues) {
+                //((DelegatingHistoryNode)this.nodes.get(i)).setDelegate(this.buildRealNode(dv));
+                //((DefaultHistoryColumn)((DelegatingHistoryNode)this.nodes.get(i).getDelegate()).process $(this.historicalValue(p));
+
+
+                var v = dv.getAsJsonObject().get("Value").getAsFloat();
+                var time = dv.getAsJsonObject().get("Timestamp").getAsString();
+                var sourceFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+                var d = sourceFormat.parse(time);
+
+                var h = new BasicQualifiedValue(v, DataQuality.GOOD_DATA, d);
+
+               // h.setValue(v);
+                //h.setTimestamp(d.getTime());
+                //h.setDataType(DataTypeClass.Float);
+                //h.setQuality(DataQuality.GOOD_DATA);
+                // h.setDataType();
+                //SimpleDateFormat formatter = new SimpleDateFormat("dd-MMM-yyyy", Locale.ENGLISH);
+                tags.get(i).put(h);
+
+                if (d.getTime() > this.maxTSInData) {
+                    this.maxTSInData = d.getTime();
+                }
             }
         }
+    }
 
-        String querySuffix = "| sort by systemName, tagProvider, tagPath, timestamp asc";
-
-        // TODO: Implement all aggregate functions
-        if (blockSize > 0) {
-            // Block data, use aggregate function
-            String function = AzureKustoAggregates.getKqlFunction(controller.getQueryParameters().getAggregationMode());
-            queryData = queryData + "| summarize value = " + function + "(value_double), quality = min(quality) by systemName, tagProvider, tagPath, bin_at(timestamp, 1millisecond * blocks, startTime)";
-        }
-
-        String query = queryPrefix + queryData + querySuffix;
-        logger.debug("Issuing query:" + query);
-
-        KustoOperationResult results = kustoQueryClient.execute(settings.getDatabaseName(), query);
-        KustoResultSetTable mainTableResult = results.getPrimaryResults();
-
-        while (mainTableResult.next()) {
-            String systemName = mainTableResult.getString("systemName");
-            String tagProvider = mainTableResult.getString("tagProvider");
-            String tagPath = mainTableResult.getString("tagPath");
-            AzureKustoTag tag = new AzureKustoTag(systemName, tagProvider, tagPath);
-
-            Object value = mainTableResult.getObject("value");
-            Timestamp timestamp = mainTableResult.getTimestamp("timestamp");
-            Integer quality = mainTableResult.getInt("quality");
-
-            logger.debug(
-                    "Reading: System:" + systemName +
-                            " tagProvider:" + tagProvider +
-                            " tagPath:" + tagPath +
-                            " Value:" + value +
-                            " timestamp:" + timestamp);
-
-            tags.get(tag).getProcessedHistoryTag().put(new BasicQualifiedValue(value, DataQuality.fromIntValue(quality), new Date(timestamp.getTime())));
-            if (timestamp.getTime() > maxTSInData) {
-                maxTSInData = timestamp.getTime();
-            }
-        }
-        */
+    protected HistoryNode buildRealNode(ColumnQueryDefinition def) {
+        Object ret;
+        ProcessedHistoryColumn c = new ProcessedHistoryColumn(def.getColumnName(), true);
+        //c.setDataType(this.toDataTypeClass(pi.getDataType()));
+        ret = c;
+        return (HistoryNode)ret;
     }
 
     /**

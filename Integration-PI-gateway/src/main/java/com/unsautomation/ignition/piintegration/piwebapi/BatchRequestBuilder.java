@@ -1,9 +1,10 @@
-package com.unsautomation.ignition.piintegration.Impl;
+package com.unsautomation.ignition.piintegration.piwebapi;
 
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.unsautomation.ignition.piintegration.Impl.PIBatchWriteValue;
 
 import java.util.ArrayList;
 import java.util.Map;
@@ -62,9 +63,6 @@ public class BatchRequestBuilder {
     }
 
     // Private
-
-
-
     private JsonObject buildBatchItem(String resource, String method, String parentId, String parameter, JsonElement content, boolean disableCache) {
         var rtn = new JsonObject();
         rtn.addProperty("Resource", resource);
@@ -95,6 +93,4 @@ public class BatchRequestBuilder {
         }
         return rtn;
     }
-
-
 }

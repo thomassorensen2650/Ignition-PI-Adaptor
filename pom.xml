@@ -36,6 +36,15 @@
     </pluginRepositories>
 
     <repositories>
+
+        <repository>
+            <id>1_maven.apache.org</id>
+            <releases>  <enabled>true</enabled>  </releases>
+            <snapshots> <enabled>true</enabled> </snapshots>
+            <url>https://repo.maven.apache.org/maven2</url>
+            <layout>default</layout>
+        </repository>
+
         <repository>
             <id>releases</id>
             <url>https://nexus.inductiveautomation.com/repository/inductiveautomation-releases</url>

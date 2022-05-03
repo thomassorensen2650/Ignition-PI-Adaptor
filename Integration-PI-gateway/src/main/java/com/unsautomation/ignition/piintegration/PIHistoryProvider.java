@@ -17,7 +17,8 @@ import com.inductiveautomation.ignition.gateway.sqltags.history.TagHistoryProvid
 import com.inductiveautomation.ignition.gateway.sqltags.history.TagHistoryProviderInformation;
 import com.inductiveautomation.ignition.gateway.sqltags.history.query.ColumnQueryDefinition;
 import com.inductiveautomation.ignition.gateway.sqltags.history.query.QueryController;
-import com.unsautomation.ignition.piintegration.Impl.PIQueryClientImpl;
+import com.unsautomation.ignition.piintegration.piwebapi.ApiException;
+import com.unsautomation.ignition.piintegration.piwebapi.PIWebApiClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,16 +34,15 @@ public class PIHistoryProvider implements TagHistoryProvider {
     private GatewayContext context;
     private PIHistoryProviderSettings settings;
     private PIHistorySink sink;
-    private final PIQueryClientImpl piClient;
+    private final PIWebApiClient piClient;
     //private PIQueryClientImpl piClient; // A client for querying data
 
-    public PIHistoryProvider(GatewayContext context, String name, PIHistoryProviderSettings settings) throws URISyntaxException {
+    public PIHistoryProvider(GatewayContext context, String name, PIHistoryProviderSettings settings) throws URISyntaxException, ApiException {
         logger.debug("PIHistoryProvider CTOR Provider");
         this.name = name;
         this.context = context;
         this.settings = settings;
-        piClient = new PIQueryClientImpl(settings);
-
+        piClient = new PIWebApiClient(settings.getWebAPIUrl(), settings.getUsername(), settings.getUsername(), settings.getVerifySSL(), false);
     }
 
     @Override
@@ -100,8 +100,8 @@ public class PIHistoryProvider implements TagHistoryProvider {
                 + ", queryController: " + queryController.toString());
 
         try {
-            return new PIQueryExecutor(context, settings, tags, queryController);
-        } catch (URISyntaxException e) {
+            return new PIQueryExecutor(piClient, context, settings, tags, queryController);
+        } catch (Exception e) {
             logger.error("Unable to create Query", e);
         }
         return null;
@@ -113,112 +113,101 @@ public class PIHistoryProvider implements TagHistoryProvider {
      * @return
      */
     @Override
-    public Results<Result> browse(QualifiedPath qualifiedPath, BrowseFilter browseFilter) {
+    public Results<Result> browse(QualifiedPath qualifiedPath, BrowseFilter browseFilter)  {
         logger.info("browse(qualifiedPath, browseFilter) called.  qualifiedPath: " + qualifiedPath.toString()
                 + ", browseFilter: " + (browseFilter == null ? "null" : browseFilter.toString()));
 
         var tagPath = qualifiedPath.getPathComponent(WellKnownPathTypes.Tag);
         var histProv = qualifiedPath.getPathComponent(WellKnownPathTypes.HistoryProvider);
-        var system = qualifiedPath.getPathComponent(WellKnownPathTypes.System);
-        var driver = qualifiedPath.getPathComponent(WellKnownPathTypes.Driver);
 
         var result = new Results<Result>();
         var list = new ArrayList<Result>();
 
         if (null == tagPath) {
-
-
-            logger.info("Browsing Root Level");
+            logger.debug("Browsing Root Level");
             var assets = new TagResult();
             var p = QualifiedPathUtils.toPathFromHistoricalString("[" + histProv + "]Assets");
-
             assets.setType(WellKnownPathTypes.Tag);
-          /*  var p = new QualifiedPath.Builder()
-                    .setProvider(histProv)
-                    .setTag("Assets") // Can we use driver here? (and is there a good explanation of tag parts somewhere?
-
-                    .build(); */
             assets.setHasChildren(true);
             assets.setPath(p);
-            //assets.setType(TagType.Folder.name());
-            //assets.setDisplayPath(p);
-
             list.add(assets);
 
             var points = new TagResult();
             var p2 = QualifiedPathUtils.toPathFromHistoricalString("[" + histProv + "]Points");
-
-
-            /*var p2 = new QualifiedPath.Builder()
-                    .setProvider(histProv)
-                    .setDriver("LORT")
-                    .setUser("TEST2")
-                    .setTag("Points") // Can we use driver here? (and is there a good explanation of tag parts somewhere?
-                    .build(); */
             points.setType(WellKnownPathTypes.Tag);
             points.setHasChildren(true);
             points.setPath(p2);
-
-            //points.setType(TagType.Folder.name());
-            //points.setDisplayPath(p);
-
             list.add(points);
 
         } else if (tagPath.equals("Assets")) {
-            for (var afServer : piClient.queryAFServers()) {
-                var name = afServer.getAsJsonObject().get("name").getAsString();
-                var server = new TagResult();
-
-                var p = new QualifiedPath.Builder()
-                        .setProvider(histProv)
-                        .setTag(tagPath + "/" + name) // Can we use driver here? (and is there a good explanation of tag parts somewhere?
-                        .build();
-                //p = QualifiedPathUtils.toPathFromHistoricalString("[" + histProv + "]Assets/"+name);
-
-                p = qualifiedPath.replace(WellKnownPathTypes.Tag, tagPath + "/" + name);
-                server.setHasChildren(true);
-                server.setPath(p);
-                server.setType(WellKnownPathTypes.Tag);
-                list.add(server);
+            try {
+                for (var afServer : piClient.getAssetServer().list("")) {
+                    var name = afServer.getAsJsonObject().get("name").getAsString();
+                    var server = new TagResult();
+                    var p = qualifiedPath.replace(WellKnownPathTypes.Tag, tagPath + "/" + name);
+                    server.setHasChildren(true);
+                    server.setPath(p);
+                    server.setType(WellKnownPathTypes.Tag);
+                    list.add(server);
+                }
+            } catch (ApiException e) {
+                logger.error("Unable to browse " + tagPath, e);
+                e.printStackTrace();
             }
         }  else if (tagPath.equals("Points")) {
+
             //for (var server : piClient.queryPIServers()) {
-            for (var afServer : piClient.queryPIServers()) {
-                var name = afServer.getAsJsonObject().get("name").getAsString();
-                var server = new TagResult();
-                var p = new QualifiedPath.Builder()
-                        .setProvider(histProv)
-                        .setTag(tagPath + "/" + name) // Can we use driver here? (and is there a good explanation of tag parts somewhere?
-                        .build();
-                server.setHasChildren(true);
-                server.setPath(p);
-                server.setType(WellKnownPathTypes.Tag);
-                list.add(server);
+            try {
+                for (var afServer : piClient.getDataServer().list("name")) {
+                    var name = afServer.getAsJsonObject().get("name").getAsString();
+                    var server = new TagResult();
+                    var p = qualifiedPath.replace(WellKnownPathTypes.Tag, tagPath + "/" + name);
+                    server.setHasChildren(true);
+                    server.setPath(p);
+                    server.setType(WellKnownPathTypes.Tag);
+                    list.add(server);
+                }
+            } catch (ApiException e) {
+                logger.error("Unable to browse " + tagPath, e);
+                e.printStackTrace();
             }
 
             //};
         } else if (tagPath.startsWith("Assets")) {
 
-            for (var afServer : piClient.queryPath(tagPath)) {
-                var name = afServer.getAsJsonObject().get("name").getAsString();
-                var server = new TagResult();
-                var p = new QualifiedPath.Builder()
-                        .setProvider(histProv)
-                        .setTag(tagPath + "/" + name) // Can we use driver here? (and is there a good explanation of tag parts somewhere?
-                        .build();
-                //p = QualifiedPathUtils.toPathFromHistoricalString(tagPath+"/"+name);
-                p = qualifiedPath.replace(WellKnownPathTypes.Tag, tagPath + "/" + name);
-                server.setHasChildren(true);
-                server.setPath(p);
-                server.setType(WellKnownPathTypes.Tag);
-                list.add(server);
+            try {
+                for (var afServer : piClient.getSearch().AfChildren(tagPath)) {
+                    var name = afServer.getAsJsonObject().get("name").getAsString();
+                    var server = new TagResult();
+                    var p = qualifiedPath.replace(WellKnownPathTypes.Tag, tagPath + "/" + name);
+                    server.setHasChildren(true);
+                    server.setPath(p);
+                    server.setType(WellKnownPathTypes.Tag);
+                    list.add(server);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
 
 
             // Browse specific Path on AF Server
         } else if (tagPath.startsWith("Points")) {
             // Browse specific Path on AF Server
-
+            var x = piClient.getDataServer().getByPath(tagPath);
+            var points = piClient.getDataServer().getPoints(x.get("webId").getAsString(), "", 0, 100, "name");
+            try {
+                for (var piPoint : points) {
+                    var name = piPoint.getAsJsonObject().get("name").getAsString();
+                    var t = new TagResult();
+                    var p = qualifiedPath.replace(WellKnownPathTypes.Tag, tagPath + "/" + name);
+                    t.setHasChildren(false);
+                    t.setPath(p);
+                    t.setType(WellKnownPathTypes.Tag);
+                    list.add(t);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
 
         result.setResults(list);

@@ -75,7 +75,6 @@ public class PIQueryClientImpl {
     }
 
     public JsonArray queryAFServers() {
-
         var a = new JsonArray();
         var s1 = new JsonObject();
         s1.addProperty("name", "AF Server 1");
@@ -87,19 +86,54 @@ public class PIQueryClientImpl {
 
         return a;
     }
+    private JsonArray queryAFDBs(String server) {
+        return null;
+    }
 
-    public JsonArray queryPath(String path) {
+    private JsonArray queryAFPath(String server, String db, String path) {
+        return null;
+    }
 
-        var a = new JsonArray();
-        var s1 = new JsonObject();
-        s1.addProperty("name", "Root Level 1");
-        a.add(s1);
+    public JsonArray queryPath(String path) throws Exception {
+        var result = new JsonArray();
+        if (null == path) {  // Top level browse
+            var a = new JsonObject();
+            a.addProperty("name", "Assets");
+            result.add(a);
 
-        var s2 = new JsonObject();
-        s2.addProperty("name", "Root Level 2");
-        a.add(s2);
+            var p = new JsonObject();
+            p.addProperty("name", "Points");
+            result.add(p);
+            return result;
+        }
 
-        return a;
+        var tagParts = path.split("/");
+        var type = tagParts[0];
+        var server = tagParts.length > 0 ? tagParts[1] : null;
+
+        if (type == "Points") {
+
+            if (null == server) {
+                return queryAFServers();
+            } else {
+                var db = tagParts.length > 1 ? tagParts[2] : null;
+                if (null == db) {
+                    return queryAFDBs(server);
+                } else {
+                    //var dbPath = toString().join("/",tagParts.length > 1 ? Arrays.asList(tagParts).subList(2,tagParts.length-1)) : null;
+                    var dbPath = "\\" + path.substring(6).replace("/", "\\");
+                    return queryAFPath(server, db, dbPath);
+                }
+
+            }
+        }else if (type == "Points") {
+
+        } else {
+            throw new Exception("Unknown Path :" + path);
+        }
+
+
+        return result;
 
     }
 
@@ -228,7 +262,4 @@ public class PIQueryClientImpl {
             throw new IOException(ex.getMessage());
         }
     }
-
-
-
 }
