@@ -1,5 +1,4 @@
 /Users/thomassorensen/Documents/Code/ignition-PI/Igntion-Integration-PI/Integration-PI-gateway/src/main/java/com/unsautomation/ignition/piintegration/piwebapi/model/PIRequest.java
-/Users/thomassorensen/Documents/Code/ignition-PI/Igntion-Integration-PI/Integration-PI-gateway/src/main/java/com/unsautomation/ignition/piintegration/Impl/PIQueryClientImpl.java
 /Users/thomassorensen/Documents/Code/ignition-PI/Igntion-Integration-PI/Integration-PI-gateway/src/main/java/com/unsautomation/ignition/piintegration/piwebapi/api/StreamApi.java
 /Users/thomassorensen/Documents/Code/ignition-PI/Igntion-Integration-PI/Integration-PI-gateway/src/main/java/com/unsautomation/ignition/piintegration/piwebapi/BatchRequestBuilder.java
 /Users/thomassorensen/Documents/Code/ignition-PI/Igntion-Integration-PI/Integration-PI-gateway/src/main/java/com/unsautomation/ignition/piintegration/piwebapi/api/SearchApi.java
@@ -20,6 +19,7 @@
 /Users/thomassorensen/Documents/Code/ignition-PI/Igntion-Integration-PI/Integration-PI-gateway/src/main/java/com/unsautomation/ignition/piintegration/piwebapi/model/PIResponse.java
 /Users/thomassorensen/Documents/Code/ignition-PI/Igntion-Integration-PI/Integration-PI-gateway/src/main/java/com/unsautomation/ignition/piintegration/piwebapi/model/PIAssetServer.java
 /Users/thomassorensen/Documents/Code/ignition-PI/Igntion-Integration-PI/Integration-PI-gateway/src/main/java/com/unsautomation/ignition/piintegration/piwebapi/api/DataServerApi.java
+/Users/thomassorensen/Documents/Code/ignition-PI/Igntion-Integration-PI/Integration-PI-gateway/src/main/java/com/unsautomation/ignition/piintegration/piwebapi/api/SystemApi.java
 /Users/thomassorensen/Documents/Code/ignition-PI/Igntion-Integration-PI/Integration-PI-gateway/src/main/java/com/unsautomation/ignition/piintegration/piwebapi/api/AssetServerApi.java
 /Users/thomassorensen/Documents/Code/ignition-PI/Igntion-Integration-PI/Integration-PI-gateway/src/main/java/com/unsautomation/ignition/piintegration/PIHistoryProviderSettings.java
 /Users/thomassorensen/Documents/Code/ignition-PI/Igntion-Integration-PI/Integration-PI-gateway/src/main/java/com/unsautomation/ignition/piintegration/PIHistorySink.java

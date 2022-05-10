@@ -10,6 +10,8 @@ import com.unsautomation.ignition.piintegration.PIHistoryProviderType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.sql.SQLException;
+
 public class GatewayHook extends AbstractGatewayModuleHook {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
@@ -20,8 +22,18 @@ public class GatewayHook extends AbstractGatewayModuleHook {
     public void setup(GatewayContext gatewayContext) {
         this.context = gatewayContext;
 
-        piHistoryProviderType = new PIHistoryProviderType();
+        BundleUtil.get().addBundle(PIHistoryProvider.class);
+        BundleUtil.get().addBundle(PIHistoryProviderSettings.class);
 
+        try {
+            context.getSchemaUpdater().updatePersistentRecords(PIHistoryProviderSettings.META);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            logger.error("Unable to verify schema",e);
+        }
+
+
+        piHistoryProviderType = new PIHistoryProviderType();
 
         // Add PI history provider type
         try {
@@ -34,8 +46,7 @@ public class GatewayHook extends AbstractGatewayModuleHook {
     @Override
     public void startup(LicenseState licenseState) {
 
-        BundleUtil.get().addBundle(PIHistoryProvider.class);
-        BundleUtil.get().addBundle(PIHistoryProviderSettings.class);
+
 
 
     }

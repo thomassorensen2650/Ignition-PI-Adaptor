@@ -4,7 +4,8 @@ import com.inductiveautomation.ignition.common.StatMetric;
 import com.inductiveautomation.ignition.common.i18n.LocalizedString;
 import com.inductiveautomation.ignition.gateway.history.*;
 import com.inductiveautomation.ignition.gateway.model.GatewayContext;
-import com.unsautomation.ignition.piintegration.Impl.PIQueryClientImpl;
+import com.unsautomation.ignition.piintegration.piwebapi.ApiException;
+import com.unsautomation.ignition.piintegration.piwebapi.PIWebApiClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,16 +25,15 @@ public class PIHistorySink implements DataSink {
     private PIHistoryProviderSettings settings; // Holds the settings for the current provider, needed to connect to ADX
     private GatewayContext context;
     private String pipelineName;
-   // private String table;
-    //private String database;
 
-    private PIQueryClientImpl piClient;
+
+    private PIWebApiClient piClient;
    //private final SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSSSSS");
 
    //private IngestionProperties ingestionProperties;
 
-    public PIHistorySink(String pipelineName, GatewayContext context, PIHistoryProviderSettings settings) throws URISyntaxException {
-        piClient = new PIQueryClientImpl(settings);
+    public PIHistorySink(PIWebApiClient client, String pipelineName, GatewayContext context, PIHistoryProviderSettings settings) throws URISyntaxException {
+        this.piClient = client;
         this.pipelineName = pipelineName;
         this.context = context;
         this.settings = settings;
@@ -119,10 +119,10 @@ public class PIHistorySink implements DataSink {
      * Called from Ignition when tags change and have data available for storage.
      */
     @Override
-    public void storeData(HistoricalData data) throws IOException, InterruptedException { // TODO Should we fail on error?
+    public void storeData(HistoricalData data) throws ApiException, IOException { // TODO Should we fail on error?
         logger.debug("Received data of type '" + data.getClass().toString() + "'");
 
-        List<HistoricalTagValue> records = new ArrayList<HistoricalTagValue>();
+        var records = new ArrayList<HistoricalTagValue>();
 
         List<HistoricalData> dataList;
         if (data instanceof DataTransaction) {
@@ -138,7 +138,6 @@ public class PIHistorySink implements DataSink {
                 ScanclassHistorySet dSet = (ScanclassHistorySet) d;
                 logger.debug("Scan class set '" + dSet.getSetName() + "' has '" + dSet.size() + "' tag(s)");
                 for (HistoricalTagValue historicalTagValue : dSet) {
-
                     records.add(historicalTagValue);
                 }
             } else if (d instanceof HistoricalTagValue) {
@@ -146,12 +145,12 @@ public class PIHistorySink implements DataSink {
                 records.add(dValue);
             }
         }
-        var errors = piClient.ingestRecords(records);
+        var errors = piClient.ingestRecords(settings, records);
 
         if (errors.size() > 0) {
-            throw new IOException(errors.size() + " Errors Occurred while Ingesting data to PI");
+            throw new ApiException(errors.size() + " Errors Occurred while Ingesting data to PI");
         }else {
-            logger.info("Ingest Without Issue.!");
+            logger.debug("Ingest Without Issue.!");
         }
 
     }

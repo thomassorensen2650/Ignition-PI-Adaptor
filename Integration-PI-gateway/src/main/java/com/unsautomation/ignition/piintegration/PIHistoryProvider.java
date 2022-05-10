@@ -50,7 +50,7 @@ public class PIHistoryProvider implements TagHistoryProvider {
         try {
             logger.info("Starting Provider");
             // Create a new data sink with the same name as the provider to store data
-            sink = new PIHistorySink(name, context, settings);
+            sink = new PIHistorySink(piClient, name, context, settings);
             context.getHistoryManager().registerSink(sink);
 
             // Create a PI client

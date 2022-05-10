@@ -1,10 +1,10 @@
 com/unsautomation/ignition/piintegration/PIHistoryProviderType.class
+com/unsautomation/ignition/piintegration/piwebapi/api/SystemApi.class
 com/unsautomation/ignition/piintegration/piwebapi/model/PIRequest.class
 com/unsautomation/ignition/piintegration/piwebapi/model/PIAssetServer.class
 com/unsautomation/ignition/piintegration/PIHistorySink$HistorySinkStatus.class
 com/unsautomation/ignition/piintegration/piwebapi/api/AssetServerApi.class
 com/unsautomation/ignition/piintegration/piwebapi/PIWebApiClient.class
-com/unsautomation/ignition/piintegration/Impl/PIQueryClientImpl.class
 com/unsautomation/ignition/GatewayHook.class
 com/unsautomation/ignition/piintegration/piwebapi/ApiClient.class
 com/unsautomation/ignition/piintegration/piwebapi/api/AssetDatabaseApi.class

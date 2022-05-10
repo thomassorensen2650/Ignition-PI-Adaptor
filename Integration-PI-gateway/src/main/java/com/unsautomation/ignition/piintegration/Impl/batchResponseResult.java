@@ -5,7 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-class batchResponseResult {
+public class batchResponseResult {
     private final Map<String, List<PIBatchWriteValue>> tagNotExist;
     private Map<String, List<PIBatchWriteValue>> errors;
     public JsonElement response;
@@ -19,7 +19,7 @@ class batchResponseResult {
     }
 
 
-    Map<String, List<PIBatchWriteValue>> getErrors(boolean includeTagNotFound) {
+    public Map<String, List<PIBatchWriteValue>> getErrors(boolean includeTagNotFound) {
         return errors;
     }
 
@@ -42,7 +42,7 @@ class batchResponseResult {
         return tagNotExist.size() > 0;
     }
 
-    JsonElement buildCreateAndWriteRequest() {
+    public JsonElement buildCreateAndWriteRequest() {
         return context.buildWriteRequest(tagNotExist, true);
     }
 }

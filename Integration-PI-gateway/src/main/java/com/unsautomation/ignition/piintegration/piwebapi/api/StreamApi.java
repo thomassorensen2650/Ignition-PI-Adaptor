@@ -11,13 +11,46 @@ import java.util.Random;
 public class StreamApi {
 
     public StreamApi(ApiClient client) {
-
     }
 
     /**
      * Retrieves values over the specified time range suitable for plotting over the number of intervals (typically represents pixels).
      */
-    public JsonObject getPlot(String webId, Date startTime, Date endTime, Integer intervals, String desiredUnits,  String selectedFields, String timeZone) throws ApiException {
+    public JsonObject getPlot(String webId, Date startTime, Date endTime, Long intervals, String desiredUnits,  String selectedFields, String timeZone) throws ApiException {
+        JsonObject obj = new JsonObject();
+        JsonArray items = new JsonArray();
+
+        var r = new Random();
+        var start = startTime.getTime();
+        var end = endTime.getTime();
+
+        var diff = end - start;
+        var valueOffset = diff / intervals;
+        var dt = startTime.toInstant();
+        for (int i = 0; i < intervals; i++) {
+            var item = new JsonObject();
+            item.addProperty("Timestamp", dt.toString());
+            item.addProperty("Good", true);
+            item.addProperty("Value", r.nextFloat()*100);
+            dt = dt.plusMillis(valueOffset);
+            items.add(item);
+        }
+        obj.add("Items", items);
+        return obj; //resp.getData();
+    }
+
+    /**
+     * Query raw data
+     * @param webId
+     * @param startTime
+     * @param endTime
+     * @param desiredUnits
+     * @param selectedFields
+     * @param timeZone
+     * @return
+     * @throws ApiException
+     */
+    public JsonObject getRecorded(String webId, Date startTime, Date endTime, String desiredUnits,  String selectedFields, String timeZone) throws ApiException {
         JsonObject obj = new JsonObject();
         JsonArray items = new JsonArray();
 
@@ -39,4 +72,7 @@ public class StreamApi {
         obj.add("Items", items);
         return obj; //resp.getData();
     }
+
+
+
 }

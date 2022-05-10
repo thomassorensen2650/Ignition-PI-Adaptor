@@ -2,12 +2,12 @@ package com.unsautomation.ignition.piintegration;
 
 import com.google.gson.JsonObject;
 import com.inductiveautomation.ignition.common.WellKnownPathTypes;
-import com.inductiveautomation.ignition.common.model.values.BasicQualifiedValue;
-import com.inductiveautomation.ignition.common.sqltags.model.types.DataQuality;
+import com.inductiveautomation.ignition.common.model.values.QualityCode;
 import com.inductiveautomation.ignition.common.sqltags.model.types.DataTypeClass;
 import com.inductiveautomation.ignition.gateway.model.GatewayContext;
 import com.inductiveautomation.ignition.gateway.sqltags.history.query.*;
 import com.inductiveautomation.ignition.gateway.sqltags.history.query.columns.ProcessedHistoryColumn;
+import com.inductiveautomation.ignition.gateway.sqltags.history.query.processing.ProcessedValue;
 import com.inductiveautomation.metro.utils.StringUtils;
 import com.unsautomation.ignition.piintegration.piwebapi.PIWebApiClient;
 import org.slf4j.Logger;
@@ -46,7 +46,6 @@ public class PIQueryExecutor  implements HistoryQueryExecutor {
         this.controller = controller;
         this.paths = tagDefs;
         this.piClient = client;
-        this.tags = new ArrayList<>();
 
         for (var def : paths) {
             this.nodes.add(new DelegatingHistoryNode(def.getColumnName()));
@@ -55,18 +54,16 @@ public class PIQueryExecutor  implements HistoryQueryExecutor {
     }
 
     /**
-     * Initialize the tags we want to query. This will create a list of AzureKustoHistoryTag
+     * Initialize the tags we want to query. This will create a list of Tags
      * that provides the fully qualified tag path, aggregation function, and tag to return.
      */
     private void initTags() {
         boolean isRaw = controller.getBlockSize() <= 0;
+        this.tags = new ArrayList<>();
 
         for (ColumnQueryDefinition c : paths) {
             var qPath = c.getPath();
-
-            String tagPath = qPath.getPathComponent(WellKnownPathTypes.Tag);
-
-            //AzureKustoTag tag = new AzureKustoTag(systemName, tagProvider, tagPath);
+            var tagPath = qPath.getPathComponent(WellKnownPathTypes.Tag);
 
             if (StringUtils.isBlank(tagPath)) {
                 // We set the data type to Integer here, because if the column is going to be errored, at least integer types won't cause charts to complain.
@@ -79,8 +76,6 @@ public class PIQueryExecutor  implements HistoryQueryExecutor {
                 tags.add(historyTag);
 
             }
-
-            //tags.put(tag, new AzureKustoHistoryTag(tag, c.getAggregate(), historyTag));
         }
     }
 
@@ -115,36 +110,35 @@ public class PIQueryExecutor  implements HistoryQueryExecutor {
         var blockSize = (int) controller.getBlockSize();
         var startDate = controller.getQueryParameters().getStartDate();
         var endDate = controller.getQueryParameters().getEndDate();
-
         logger.debug("startReading(blockSize, startDate, endDate) called.  blockSize: " + blockSize
-                + ", startDate: " + startDate.toString() + ", endDate: " + endDate.toString());
+                + ", startDate: " + startDate.toString() + ", endDate: " + endDate.toString() + " pathSize:" + paths.size());
 
         for (int i = 0; i < paths.size() ; i++) {
             var t = paths.get(i).getPath();
-            queryResult = piClient.getStream().getPlot(t.toString(), startDate, endDate, 100, null,null,null);
+
+            if (blockSize == 0) {
+                queryResult = piClient.getStream().getRecorded(t.toString(), startDate, endDate, null,null,null);
+            } else  {
+                // TODO: calculate the interval from block size.
+                var interval = (endDate.getTime() - startDate.getTime())/blockSize;
+                queryResult = piClient.getStream().getPlot(t.toString(), startDate, endDate, interval, null,null,null);
+
+            }
             var dataValues = queryResult.get("Items").getAsJsonArray();
             for (var dv : dataValues) {
                 //((DelegatingHistoryNode)this.nodes.get(i)).setDelegate(this.buildRealNode(dv));
                 //((DefaultHistoryColumn)((DelegatingHistoryNode)this.nodes.get(i).getDelegate()).process $(this.historicalValue(p));
 
-
                 var v = dv.getAsJsonObject().get("Value").getAsFloat();
                 var time = dv.getAsJsonObject().get("Timestamp").getAsString();
                 var sourceFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-                var d = sourceFormat.parse(time);
+                var d = sourceFormat.parse(time).getTime();
 
-                var h = new BasicQualifiedValue(v, DataQuality.GOOD_DATA, d);
-
-               // h.setValue(v);
-                //h.setTimestamp(d.getTime());
-                //h.setDataType(DataTypeClass.Float);
-                //h.setQuality(DataQuality.GOOD_DATA);
-                // h.setDataType();
-                //SimpleDateFormat formatter = new SimpleDateFormat("dd-MMM-yyyy", Locale.ENGLISH);
+                var h = new ProcessedValue(v, QualityCode.Good, d,blockSize > 0);
                 tags.get(i).put(h);
 
-                if (d.getTime() > this.maxTSInData) {
-                    this.maxTSInData = d.getTime();
+                if (d > this.maxTSInData) {
+                    this.maxTSInData = d;
                 }
             }
         }
