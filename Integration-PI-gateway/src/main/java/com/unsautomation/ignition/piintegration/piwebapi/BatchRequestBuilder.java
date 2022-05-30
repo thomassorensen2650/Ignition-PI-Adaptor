@@ -1,17 +1,16 @@
 package com.unsautomation.ignition.piintegration.piwebapi;
 
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.unsautomation.ignition.piintegration.Impl.PIBatchWriteValue;
+import com.inductiveautomation.ignition.common.gson.GsonBuilder;
+import com.inductiveautomation.ignition.common.gson.JsonArray;
+import com.inductiveautomation.ignition.common.gson.JsonElement;
+import com.inductiveautomation.ignition.common.gson.JsonObject;
 
 import java.util.ArrayList;
 import java.util.Map;
 
 public class BatchRequestBuilder {
 
-    private Map<String, ArrayList<PIBatchWriteValue>> _writes;
+    private Map<String, ArrayList<JsonObject>> _writes;
     private JsonObject requests = new JsonObject();
     private String baseUrl;
     public BatchRequestBuilder(String baseUrl) {
@@ -45,7 +44,7 @@ public class BatchRequestBuilder {
         return this;
     }
 
-    BatchRequestBuilder writeTagValue(String id, String tagId, PIBatchWriteValue value) {
+    BatchRequestBuilder writeTagValue(String id, String tagId, JsonObject value) {
         if (!_writes.containsKey(tagId)) {
             _writes.put(tagId, new ArrayList<>());
         }
@@ -58,7 +57,7 @@ public class BatchRequestBuilder {
         return this;
     }
 
-    JsonElement build() {
+    JsonObject build() {
         return null;
     }
 

@@ -1,8 +1,9 @@
 package com.unsautomation.ignition.piintegration.piwebapi.api;
 
-import com.google.gson.JsonElement;
+import com.inductiveautomation.ignition.common.gson.JsonElement;
 import com.unsautomation.ignition.piintegration.piwebapi.ApiClient;
 import com.unsautomation.ignition.piintegration.piwebapi.ApiException;
+
 
 public class BatchApi {
     private ApiClient apiClient;
@@ -21,7 +22,7 @@ public class BatchApi {
      */
     public JsonElement execute(JsonElement batch) throws ApiException {
        // Convert batch to request
-        return apiClient.postBatch("batch", batch);
+        return apiClient.doPost("batch", batch);
     }
 
 }

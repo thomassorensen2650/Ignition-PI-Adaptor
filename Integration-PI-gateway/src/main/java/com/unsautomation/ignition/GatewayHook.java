@@ -21,7 +21,6 @@ public class GatewayHook extends AbstractGatewayModuleHook {
     @Override
     public void setup(GatewayContext gatewayContext) {
         this.context = gatewayContext;
-
         BundleUtil.get().addBundle(PIHistoryProvider.class);
         BundleUtil.get().addBundle(PIHistoryProviderSettings.class);
 

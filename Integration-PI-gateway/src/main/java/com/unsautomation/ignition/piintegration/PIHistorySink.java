@@ -25,12 +25,7 @@ public class PIHistorySink implements DataSink {
     private PIHistoryProviderSettings settings; // Holds the settings for the current provider, needed to connect to ADX
     private GatewayContext context;
     private String pipelineName;
-
-
     private PIWebApiClient piClient;
-   //private final SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSSSSS");
-
-   //private IngestionProperties ingestionProperties;
 
     public PIHistorySink(PIWebApiClient client, String pipelineName, GatewayContext context, PIHistoryProviderSettings settings) throws URISyntaxException {
         this.piClient = client;
@@ -95,18 +90,15 @@ public class PIHistorySink implements DataSink {
 
     @Override
     public void shutdown() {
-
     }
 
     @Override
     public boolean isAccepting() {
-        // TODO: Determine if ADX is accepting data
-        return true;
+        return piClient.getCustom().isAvailable();
     }
 
     @Override
     public List<DataSinkInformation> getInfo() {
-        // TODO: Determine the status of the history sink
         return Arrays.asList(new HistorySinkStatus());
     }
 
@@ -126,33 +118,23 @@ public class PIHistorySink implements DataSink {
 
         List<HistoricalData> dataList;
         if (data instanceof DataTransaction) {
-            dataList = ((DataTransaction) data).getData();
+            dataList = ((DataTransaction)data).getData();
         } else {
             dataList = Collections.singletonList(data);
         }
 
-        // Find all of the tags passed in that have data
+        // Find all the tags passed in that have data
         logger.debug("History set with '" + dataList.size() + "' row(s)");
         for (HistoricalData d : dataList) {
             if (d instanceof ScanclassHistorySet) {
                 ScanclassHistorySet dSet = (ScanclassHistorySet) d;
                 logger.debug("Scan class set '" + dSet.getSetName() + "' has '" + dSet.size() + "' tag(s)");
-                for (HistoricalTagValue historicalTagValue : dSet) {
-                    records.add(historicalTagValue);
-                }
+                records.addAll(dSet);
             } else if (d instanceof HistoricalTagValue) {
-                HistoricalTagValue dValue = (HistoricalTagValue) d;
-                records.add(dValue);
+                records.add((HistoricalTagValue)d);
             }
         }
-        var errors = piClient.ingestRecords(settings, records);
-
-        if (errors.size() > 0) {
-            throw new ApiException(errors.size() + " Errors Occurred while Ingesting data to PI");
-        }else {
-            logger.debug("Ingest Without Issue.!");
-        }
-
+        piClient.getCustom().ingestRecords(settings, records);
     }
 
     @Override

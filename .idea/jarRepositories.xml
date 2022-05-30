@@ -31,5 +31,10 @@
       <option name="name" value="releases" />
       <option name="url" value="https://nexus.inductiveautomation.com/repository/inductiveautomation-releases" />
     </remote-repository>
+    <remote-repository>
+      <option name="id" value="1_maven.apache.org" />
+      <option name="name" value="1_maven.apache.org" />
+      <option name="url" value="https://repo.maven.apache.org/maven2" />
+    </remote-repository>
   </component>
 </project>

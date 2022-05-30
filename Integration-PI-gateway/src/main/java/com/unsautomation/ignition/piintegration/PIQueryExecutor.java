@@ -1,7 +1,7 @@
 package com.unsautomation.ignition.piintegration;
 
-import com.google.gson.JsonObject;
 import com.inductiveautomation.ignition.common.WellKnownPathTypes;
+import com.inductiveautomation.ignition.common.gson.JsonObject;
 import com.inductiveautomation.ignition.common.model.values.QualityCode;
 import com.inductiveautomation.ignition.common.sqltags.model.types.DataTypeClass;
 import com.inductiveautomation.ignition.gateway.model.GatewayContext;
@@ -135,6 +135,7 @@ public class PIQueryExecutor  implements HistoryQueryExecutor {
                 var d = sourceFormat.parse(time).getTime();
 
                 var h = new ProcessedValue(v, QualityCode.Good, d,blockSize > 0);
+
                 tags.get(i).put(h);
 
                 if (d > this.maxTSInData) {

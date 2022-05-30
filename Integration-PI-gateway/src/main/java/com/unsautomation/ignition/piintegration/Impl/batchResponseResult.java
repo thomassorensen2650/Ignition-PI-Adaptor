@@ -1,6 +1,7 @@
 package com.unsautomation.ignition.piintegration.Impl;
 
-import com.google.gson.JsonElement;
+import com.inductiveautomation.ignition.common.gson.JsonElement;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;

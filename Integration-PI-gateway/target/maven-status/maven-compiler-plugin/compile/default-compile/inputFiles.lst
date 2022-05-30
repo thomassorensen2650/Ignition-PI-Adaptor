@@ -1,5 +1,6 @@
 /Users/thomassorensen/Documents/Code/ignition-PI/Igntion-Integration-PI/Integration-PI-gateway/src/main/java/com/unsautomation/ignition/piintegration/piwebapi/model/PIRequest.java
 /Users/thomassorensen/Documents/Code/ignition-PI/Igntion-Integration-PI/Integration-PI-gateway/src/main/java/com/unsautomation/ignition/piintegration/piwebapi/api/StreamApi.java
+/Users/thomassorensen/Documents/Code/ignition-PI/Igntion-Integration-PI/Integration-PI-gateway/src/main/java/com/unsautomation/ignition/piintegration/piwebapi/NotFoundException.java
 /Users/thomassorensen/Documents/Code/ignition-PI/Igntion-Integration-PI/Integration-PI-gateway/src/main/java/com/unsautomation/ignition/piintegration/piwebapi/BatchRequestBuilder.java
 /Users/thomassorensen/Documents/Code/ignition-PI/Igntion-Integration-PI/Integration-PI-gateway/src/main/java/com/unsautomation/ignition/piintegration/piwebapi/api/SearchApi.java
 /Users/thomassorensen/Documents/Code/ignition-PI/Igntion-Integration-PI/Integration-PI-gateway/src/main/java/com/unsautomation/ignition/piintegration/piwebapi/api/BatchApi.java
@@ -7,6 +8,7 @@
 /Users/thomassorensen/Documents/Code/ignition-PI/Igntion-Integration-PI/Integration-PI-gateway/src/main/java/com/unsautomation/ignition/piintegration/PIHistoryProviderType.java
 /Users/thomassorensen/Documents/Code/ignition-PI/Igntion-Integration-PI/Integration-PI-gateway/src/main/java/com/unsautomation/ignition/piintegration/Impl/PIWebAPIBatchWrite.java
 /Users/thomassorensen/Documents/Code/ignition-PI/Igntion-Integration-PI/Integration-PI-gateway/src/main/java/com/unsautomation/ignition/piintegration/PIQueryExecutor.java
+/Users/thomassorensen/Documents/Code/ignition-PI/Igntion-Integration-PI/Integration-PI-gateway/src/main/java/com/unsautomation/ignition/piintegration/piwebapi/api/PointApi.java
 /Users/thomassorensen/Documents/Code/ignition-PI/Igntion-Integration-PI/Integration-PI-gateway/src/main/java/com/unsautomation/ignition/piintegration/piwebapi/api/AssetDatabaseApi.java
 /Users/thomassorensen/Documents/Code/ignition-PI/Igntion-Integration-PI/Integration-PI-gateway/src/main/java/com/unsautomation/ignition/piintegration/piwebapi/model/PIElement.java
 /Users/thomassorensen/Documents/Code/ignition-PI/Igntion-Integration-PI/Integration-PI-gateway/src/main/java/com/unsautomation/ignition/piintegration/Impl/PIBatchWriteValue.java
@@ -24,4 +26,5 @@
 /Users/thomassorensen/Documents/Code/ignition-PI/Igntion-Integration-PI/Integration-PI-gateway/src/main/java/com/unsautomation/ignition/piintegration/PIHistoryProviderSettings.java
 /Users/thomassorensen/Documents/Code/ignition-PI/Igntion-Integration-PI/Integration-PI-gateway/src/main/java/com/unsautomation/ignition/piintegration/PIHistorySink.java
 /Users/thomassorensen/Documents/Code/ignition-PI/Igntion-Integration-PI/Integration-PI-gateway/src/main/java/com/unsautomation/ignition/piintegration/PIHistoryTag.java
+/Users/thomassorensen/Documents/Code/ignition-PI/Igntion-Integration-PI/Integration-PI-gateway/src/main/java/com/unsautomation/ignition/piintegration/piwebapi/api/CustomApi.java
 /Users/thomassorensen/Documents/Code/ignition-PI/Igntion-Integration-PI/Integration-PI-gateway/src/main/java/com/unsautomation/ignition/piintegration/PIHistoryProvider.java

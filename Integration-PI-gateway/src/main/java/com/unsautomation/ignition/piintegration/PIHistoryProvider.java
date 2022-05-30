@@ -156,7 +156,6 @@ public class PIHistoryProvider implements TagHistoryProvider {
             }
         }  else if (tagPath.equals("Points")) {
 
-            //for (var server : piClient.queryPIServers()) {
             try {
                 for (var afServer : piClient.getDataServer().list("name")) {
                     var name = afServer.getAsJsonObject().get("name").getAsString();
@@ -171,8 +170,6 @@ public class PIHistoryProvider implements TagHistoryProvider {
                 logger.error("Unable to browse " + tagPath, e);
                 e.printStackTrace();
             }
-
-            //};
         } else if (tagPath.startsWith("Assets")) {
 
             try {
@@ -206,273 +203,14 @@ public class PIHistoryProvider implements TagHistoryProvider {
                     list.add(t);
                 }
             } catch (Exception e) {
+                logger.error("Error fetching tags", e);
                 e.printStackTrace();
             }
         }
 
         result.setResults(list);
-        //result.setTotalAvailableResults(list.size());
         result.setResultQuality(QualityCode.Good);
         return result;
-        /*
-        if (tagPath == null && system == null) {
-            logger.info("Browsing Root");
-
-            // Root Level
-            TagResult af;
-            /*var a = new QualifiedPath.Builder()
-                    .setProvider(histProv)
-                   // .setSystem("AF")
-                    .setTag("AF")
-                    .build();
-            //af.setPath(a);
-            af.setType("Tag");
-
-            af.setHasChildren(true);
-            af = new TagResult();
-            af.setType("folder");
-            af.setHasChildren(true);
-            QualifiedPath fullTagPath = QualifiedPathUtils.toPathFromHistoricalString("[" + histProv + "]Points");
-            af.setPath(fullTagPath);
-            list.add(af);
-
-            af = new TagResult();
-            af.setType("folder");
-            af.setHasChildren(true);
-            fullTagPath = QualifiedPathUtils.toPathFromHistoricalString("[" + histProv + "]Assets");
-            af.setPath(fullTagPath);
-            list.add(af);
-
-
-            /*
-            TagResult pi = new TagResult();
-            var p = new QualifiedPath.Builder()
-                    .setProvider(histProv)
-                    .setTag("PI")
-                    //.setSystem("PI")
-                    .build();
-            pi.setPath(p);
-            af.setType("Tag");
-
-            pi.setHasChildren(true);
-            list.add(pi);
-
-
-
-        }else if (tagPath != null && tagPath.startsWith("Assets")) {
-
-            logger.info("Browsing AF Servers");
-
-            var url = settings.getWebAPIUrl() + "/assetservers/?selectedFields=Name;Path;IsConnected";
-            var assetServers = getJson(new URI(url));
-            if (assetServers.isJsonObject()) {
-                var as = assetServers.getAsJsonObject();
-                if (as.has("Items")) {
-                    for (var assetServer : as.get("Items").getAsJsonArray()) {
-                        TagResult pi = new TagResult();
-                        var p = new QualifiedPath.Builder()
-                                .setProvider(histProv)
-                                .setDriver(driver)
-                                .setSystem("AF")
-                                .setTag(assetServer.getAsJsonObject().getAsJsonPrimitive("Path").getAsString())
-                                .build();
-                        pi.setPath(p);
-                        //pi.setType(TagType.Folder.name());
-
-                        pi.setHasChildren(true);
-                        list.add(pi);
-                    }
-                } else {
-                    // TODO: Check if there is an error attribute
-                    throw new IOException("Invalid Response trying to get asset servers");
-                }
-
-
-            }
-
-            var piUrl = settings.getWebAPIUrl() + "/assetservers/?selectedFields=Name;Path;IsConnected";
-            var piArchivers = getJson(new URI(url));
-            if (assetServers.isJsonObject()) {
-                var as = assetServers.getAsJsonObject();
-                if (as.has("Items")) {
-                    for (var assetServer : as.get("Items").getAsJsonArray()) {
-                        TagResult pi = new TagResult();
-                        var p = new QualifiedPath.Builder()
-                                .setDriver(histProv)
-                                .setDriver(driver)
-                                .setSystem("AF")
-
-                                .setTag(assetServer.getAsJsonObject().getAsJsonPrimitive("Path").getAsString())
-                                .build();
-                        pi.setPath(p);
-                        //pi.setType(TagType.Folder.name());
-                        pi.setHasChildren(true);
-                        list.add(pi);
-                    }
-                } else {
-                    // TODO: Check if there is a error attribute
-                    throw new IOException("Invalid Response trying to get asset servers");
-                }
-
-
-            }
-
-
-
-
-        } else if (tagPath != null && tagPath.startsWith("Points")) {
-            var af = new TagResult();
-            af.setType("tag");
-            af.setHasChildren(false);
-            QualifiedPath fullTagPath = QualifiedPathUtils.toPathFromHistoricalString("[" + histProv + ":default]PI/Funky!!!");
-            af.setPath(fullTagPath);
-            list.add(af);
-        }
-        result.setResults(list);
-        result.setTotalAvailableResults(list.size());
-        result.setResultQuality(QualityCode.Good);
-        return result;
-        /*
-        Results<Result> result = new Results<Result>();
-
-        ArrayList<Result> list = new ArrayList();
-        var histProv = qualifiedPath.getPathComponent(WellKnownPathTypes.HistoryProvider);
-        TagResult pi = new TagResult();
-        pi.setType("tag");
-        pi.setHasChildren(true);
-        QualifiedPath fullTagPath = QualifiedPathUtils.toPathFromHistoricalString("[" + histProv + ":default]AF");
-        pi.setPath(fullTagPath);
-        list.add(pi);
-
-
-
-
-/*
-
-        //
-        // [Tag Provider]folder/path/tag.property
-
-        // qualifiedPath: histprov:HAHAH,
-        // browseFilter: BrowseFilter{allowedTypes=null, nameFilters=null, properties={}, excludeProperties=null, maxResults=-1, offset=-1, continuationPoint='null', recursive=false}
-       //String histProv = qualifiedPath.getPathComponent(WellKnownPathTypes.HistoryProvider);
-        String systemName = null;
-        String tagProvider = null;
-        //String driver = qualifiedPath.getPathComponent(WellKnownPathTypes.Driver);
-        if (driver != null) {
-            String[] parts = driver.split(":");
-            systemName = parts[0];
-            tagProvider = parts[1];
-        }
-
-
-        logger.info("provider: '" + histProv +
-                ",  driver: '" + driver +
-                "', systemName: '" + systemName +
-                "', tagProvider: '" + tagProvider +
-                "', tagPath: '" + tagPath);
-
-
-
-        if (systemName == null) {
-            // Query Top Level
-            TagResult af = new TagResult();
-            af.setType("tag");
-            af.setHasChildren(true);
-            QualifiedPath fullTagPath = QualifiedPathUtils.toPathFromHistoricalString("[" + histProv + "/default]");
-            af.setPath(fullTagPath);
-            list.add(af);
-
-            TagResult pi = new TagResult();
-            pi.setType("tag");
-            pi.setHasChildren(true);
-            QualifiedPath fullTagPath2 = QualifiedPathUtils.toPathFromHistoricalString("[" + histProv + "/pi:default]");
-            pi.setPath(fullTagPath2);
-
-
-            list.add(pi);
-
-        } else {
-            TagResult pi = new TagResult();
-            pi.setType("tag");
-            pi.setHasChildren(false);
-            QualifiedPath fullTagPath = QualifiedPathUtils.toPathFromHistoricalString("[" + histProv + "/pi:default]TEST");
-            pi.setPath(fullTagPath);
-            list.add(pi);
-        }*/
-
-
-
-
-       /* result.setResults(list);
-        result.setTotalAvailableResults(list.size());
-        result.setResultQuality(QualityCode.Good);
-        return result; */
-        // FIXME: First one to implement
-
-        /*ArrayList<Result> list = new ArrayList<>();
-
-        // First, we need to find the starting point based on history provider, system name, tag provider, and tag path
-
-
-
-        String query = settings.getTableName();
-        if (systemName == null) {
-            query += " | distinct systemName, tagProvider, tagPath";
-            query += " | summarize countChildren = dcount(tagPath) by systemName, tagProvider";
-            query += " | extend hasChildren = countChildren > 0";
-            query += " | project systemName, tagProvider, hasChildren";
-        } else if (tagPath == null) {
-            query += " | where systemName == \"" + systemName + "\" | where tagProvider == \"" + tagProvider + "\"";
-            query += " | distinct systemName, tagProvider, tagPath";
-            query += " | extend tagPrefix = tostring(split(tagPath, \"/\")[0])";
-            query += " | summarize countChildren = dcountif(tagPath, tagPath != tagPrefix) by systemName, tagProvider, tagPrefix";
-            query += " | extend hasChildren = countChildren > 0";
-            query += " | project systemName, tagProvider, tagPrefix, hasChildren";
-        } else {
-            String[] tagPathParts = tagPath.split("/");
-            query += " | where systemName == \"" + systemName + "\" | where tagProvider == \"" + tagProvider + "\" | where tagPath startswith \"" + tagPath + "/\"";
-            query += " | distinct systemName, tagProvider, tagPath";
-            query += " | extend tagPrefix = strcat_array(array_slice(split(tagPath, \"/\"), 0, " + tagPathParts.length + "), \"/\")";
-            query += " | summarize countChildren = dcountif(tagPath, tagPath != tagPrefix) by systemName, tagProvider, tagPrefix";
-            query += " | extend hasChildren = countChildren > 0";
-            query += " | project systemName, tagProvider, tagPrefix, hasChildren";
-        }
-        logger.debug("Issuing query:" + query);
-
-        try {
-            KustoOperationResult results = piClient.execute(settings.getDatabaseName(), query);
-            KustoResultSetTable mainTableResult = results.getPrimaryResults();
-
-            while (mainTableResult.next()) {
-                boolean hasChildren = mainTableResult.getBoolean("hasChildren");
-                String systemNameFromRecord = systemNameFromRecord = mainTableResult.getString("systemName");
-                String tagProviderFromRecord = tagProviderFromRecord = mainTableResult.getString("tagProvider");
-                String tagPathFromRecord = null;
-                if (systemName != null) {
-                    tagPathFromRecord = mainTableResult.getString("tagPrefix");
-                }
-
-                TagResult tagResult = new TagResult();
-                tagResult.setHasChildren(hasChildren);
-                QualifiedPath.Builder builder = new QualifiedPath.Builder().set(WellKnownPathTypes.HistoryProvider, histProv);
-                if (systemNameFromRecord != null && !systemNameFromRecord.isEmpty()) {
-                    builder.setDriver(systemNameFromRecord + ":" + tagProviderFromRecord);
-                }
-                if (tagPathFromRecord != null && !tagPathFromRecord.isEmpty()) {
-                    builder.setTag(tagPathFromRecord);
-                }
-                tagResult.setPath(builder.build());
-                list.add(tagResult);
-            }
-        } catch (Exception e) {
-            logger.error("Issuing query failed: returning empty results: " + query);
-        }
-
-        result.setResults(list);
-
-       //result.setResultQuality((Quality.GOOD);)*/
-        //result.setTotalAvailableResults(0);
-        //return null;
     }
 
     @Override
@@ -525,6 +263,11 @@ public class PIHistoryProvider implements TagHistoryProvider {
             timelines.add(t);
         }
 */
+
+        Timeline t = new Timeline();
+        t.addSegment(2, 3);
+        timelines.add(t);
+
         TimelineSet timelineSet = new TimelineSet(timelines);
         return timelineSet;
     }

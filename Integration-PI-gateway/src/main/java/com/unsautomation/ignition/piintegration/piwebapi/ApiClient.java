@@ -1,7 +1,7 @@
 package com.unsautomation.ignition.piintegration.piwebapi;
 
-import com.google.gson.JsonElement;
-import com.google.gson.JsonParser;
+import com.inductiveautomation.ignition.common.gson.JsonElement;
+import com.inductiveautomation.ignition.common.gson.JsonParser;
 import org.apache.http.auth.AuthenticationException;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.methods.HttpPost;
@@ -15,7 +15,6 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.ssl.SSLContextBuilder;
 
-import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 
@@ -36,15 +35,13 @@ public class ApiClient {
      * @param relativeUrl
      * @param requests
      * @return
-     * @throws IOException
-     * @throws InterruptedException
+     * @throws ApiException
      */
-     public JsonElement postBatch(String relativeUrl, JsonElement requests) throws ApiException {
-
+     public JsonElement doPost(String relativeUrl, JsonElement requests) throws ApiException {
          var uri = URI.create(baseUrl + "/" + relativeUrl);
-        var request = new HttpPost(uri);
+         var request = new HttpPost(uri);
         //request.setHeader("Accept", "application/json");
-        request.setHeader("Content-type", "application/json");
+         request.setHeader("Content-type", "application/json");
          try {
              request.setEntity(new StringEntity(requests.toString()));
          } catch (UnsupportedEncodingException e) {
@@ -63,26 +60,15 @@ public class ApiClient {
         try {
             var response = httpClient.execute(request); //, HttpResponse.BodyHandlers.ofString());
             var content = new BasicResponseHandler().handleResponse(response);
-            return JsonParser.parseString(content);
+            return (new JsonParser()).parse(content);
         } catch (Exception ex) {
             throw new ApiException(ex);
         }
     }
 
-    public void setUsername(String username) {
-        this.username = username;
+    public JsonElement doGet(String relativeUrl) {
+         return null;
     }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
-    public void setBaseUrl(String baseUrl) {
-        this.baseUrl = baseUrl;
-    }
-
-
-
     /* Create a HTTP Client
      * @return a configured HTTP Client
      */

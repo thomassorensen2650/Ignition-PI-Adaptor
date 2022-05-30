@@ -9,6 +9,13 @@ import java.util.UUID;
 
 public class WebIdUtils {
 
+    public static String tagToWebId(String dataServer, String tagName) {
+        return null;
+    }
+
+    public static String dataServerToWebId(String dataServer) {
+        return null;
+    }
     public static String toWebID(QualifiedPath path) throws ApiException {
 
         var tagPath = path.getPathComponent(WellKnownPathTypes.Tag).toUpperCase();
@@ -55,9 +62,6 @@ public class WebIdUtils {
         return "P1" + marker + ownerMarker + encodedPath;
     }
 
-    public static QualifiedPath toQualifiedPath() {
-        return null;
-    }
 
 
     public static String encode(String value)
