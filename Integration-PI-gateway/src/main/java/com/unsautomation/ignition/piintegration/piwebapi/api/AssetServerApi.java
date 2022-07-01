@@ -4,6 +4,7 @@ import com.inductiveautomation.ignition.common.gson.JsonArray;
 import com.inductiveautomation.ignition.common.gson.JsonObject;
 import com.unsautomation.ignition.piintegration.piwebapi.ApiClient;
 import com.unsautomation.ignition.piintegration.piwebapi.ApiException;
+import org.apache.http.client.HttpResponseException;
 
 public class AssetServerApi {
 

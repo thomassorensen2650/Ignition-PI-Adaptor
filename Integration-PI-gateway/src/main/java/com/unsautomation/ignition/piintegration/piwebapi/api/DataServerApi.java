@@ -4,6 +4,7 @@ import com.inductiveautomation.ignition.common.gson.JsonArray;
 import com.inductiveautomation.ignition.common.gson.JsonObject;
 import com.unsautomation.ignition.piintegration.piwebapi.ApiClient;
 import com.unsautomation.ignition.piintegration.piwebapi.ApiException;
+import org.apache.http.client.HttpResponseException;
 
 public class DataServerApi {
 
@@ -27,7 +28,7 @@ public class DataServerApi {
         return r;
     }
 
-    public JsonObject getByPath(String path) throws ApiException {
+    public JsonObject getByPath(String path) throws ApiException, HttpResponseException {
 
         if (client.getSimulationMode()) {
             var first = new JsonObject();
@@ -36,12 +37,12 @@ public class DataServerApi {
         }
 
 
-        return client.doGet("/dataservers?path=\\\\" + path).getAsJsonObject();
+        return client.doGet("dataservers?path=" + path).getAsJsonObject();
 
 
     }
 
-    public JsonArray getPoints(String dataServerWebId, String nameFilter, Integer startIndex, Integer maxCount, String selectedFields) throws ApiException {
+    public JsonArray getPoints(String dataServerWebId, String nameFilter, Integer startIndex, Integer maxCount, String selectedFields) throws ApiException{
 
         if (client.getSimulationMode()) {
             var r = new JsonArray();
@@ -52,9 +53,11 @@ public class DataServerApi {
             }
             return r;
         }
-        var url = String.format("dataservers/%s/points?", dataServerWebId);
+        var url = String.format("dataservers/%s/points", dataServerWebId);
+
+
         if (null != nameFilter) {
-            url += "nameFilter=" + nameFilter + "&";
+            url += "nameFilter=" + client.urlEncode(nameFilter) + "&";
         }
         if (null != startIndex) {
             url += "startIndex=" + startIndex + "&";

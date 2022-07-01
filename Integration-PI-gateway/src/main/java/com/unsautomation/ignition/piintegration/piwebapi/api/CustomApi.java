@@ -6,6 +6,7 @@ import com.inductiveautomation.ignition.gateway.history.HistoricalTagValue;
 import com.unsautomation.ignition.piintegration.PIHistoryProviderSettings;
 import com.unsautomation.ignition.piintegration.piwebapi.ApiException;
 import com.unsautomation.ignition.piintegration.piwebapi.PIWebApiClient;
+import org.apache.http.client.HttpResponseException;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
@@ -19,11 +20,13 @@ public class CustomApi {
     private final StreamApi stream;
     private final DataServerApi dataserver;
     private final SystemApi system;
+    private final PointApi point;
 
     public CustomApi(PIWebApiClient client) {
         this.stream = client.getStream();
         this.dataserver = client.getDataServer();
         this.system = client.getSystem();
+        this.point = client.getPoint();
     }
 
     /***
@@ -55,25 +58,30 @@ public class CustomApi {
 
     public String getOrCreateTag(String dataServer, String tagName, JsonObject point) throws ApiException {
 
-        var path =  dataServer + "/" + tagName;
+        var path = "\\\\" + dataServer + "\\" + tagName;
         if (tagCache.containsKey(path)) {
             return tagCache.get(path);
         }
 
+
+        var tag = this.point.getByPath(path);
+        var tagWebId = tag.getAsJsonObject().get("WebId").getAsString();
         // Ignore NotFound Exception, as we want it fail if not found
-        var archiver = dataserver.getByPath(dataServer);
-        var webId = archiver.get("WebId").getAsString();
+        //var archiver = dataserver.getByPath(dataServer);
+        // var arc = archiver.getAsJsonArray("Items").get(0);
+        //var webId = arc.getAsJsonObject().get("WebId").getAsString();
 
         // Tag not qualified
-        JsonArray tags = null;
-        tags = dataserver.getPoints(webId, tagName, 0 ,1, null);
+        //JsonArray tags = null;
+        //tags = dataserver.getPoints(webId, tagName, 0, 1, null);
 
-        String tagWebId = null;
-        if (tags.size() == 0) {
-            tagWebId = dataserver.createPoint(point);
-        }else {
-            tagWebId = tags.get(0).getAsJsonObject().get("WebId").getAsString();
-        }
+        //String tagWebId = null;
+        //if (tags.size() == 0) {
+        //    tagWebId = dataserver.createPoint(point);
+        //}else {
+        //    tagWebId = tags.get(0).getAsJsonObject().get("WebId").getAsString();
+        //}
+
         tagCache.put(path, tagWebId);
         return tagWebId;
     }

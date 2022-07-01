@@ -4,6 +4,7 @@ import com.inductiveautomation.ignition.common.gson.JsonArray;
 import com.inductiveautomation.ignition.common.gson.JsonObject;
 import com.unsautomation.ignition.piintegration.piwebapi.ApiClient;
 import com.unsautomation.ignition.piintegration.piwebapi.ApiException;
+import org.apache.http.client.HttpResponseException;
 
 import java.util.Date;
 import java.util.Random;
@@ -18,7 +19,7 @@ public class StreamApi {
     /**
      * Retrieves values over the specified time range suitable for plotting over the number of intervals (typically represents pixels).
      */
-    public JsonObject getPlot(String webId, Date startTime, Date endTime, Long intervals, String desiredUnits, String selectedFields, String timeZone) throws ApiException {
+    public JsonObject getPlot(String webId, Date startTime, Date endTime, Long intervals, String desiredUnits, String selectedFields, String timeZone) throws ApiException, HttpResponseException {
 
         if (client.getSimulationMode()) {
             JsonObject obj = new JsonObject();

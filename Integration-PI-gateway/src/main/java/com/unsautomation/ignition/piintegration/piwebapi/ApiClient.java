@@ -4,6 +4,7 @@ import com.inductiveautomation.ignition.common.gson.JsonElement;
 import com.inductiveautomation.ignition.common.gson.JsonParser;
 import org.apache.http.auth.AuthenticationException;
 import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
@@ -16,6 +17,7 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.ssl.SSLContextBuilder;
 
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLEncoder;
@@ -74,16 +76,19 @@ public class ApiClient {
         }
     }
 
-    public JsonElement doGet(String relativeUrl) throws ApiException {
-
+    public String urlEncode(String toEncode) throws ApiException {
         try {
-            relativeUrl = URLEncoder.encode(relativeUrl, "UTF-8");
+            toEncode = URLEncoder.encode(toEncode, "UTF-8");
         } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
-            throw new ApiException("Error Setting Authentication", e);
+            throw new ApiException("Error Encoding URL Parameters", e);
         }
+        return toEncode;
+    }
+    public JsonElement doGet(String relativeUrl) throws ApiException {
 
-        var uri = URI.create(baseUrl + relativeUrl);
+
+        var uri = URI.create(baseUrl  + relativeUrl);
          var request = new HttpGet(uri);
         //request.setHeader("Accept", "application/json");
         request.setHeader("Content-type", "application/json");
@@ -102,7 +107,11 @@ public class ApiClient {
             var response = httpClient.execute(request); //, HttpResponse.BodyHandlers.ofString());
             var content = new BasicResponseHandler().handleResponse(response);
             return (new JsonParser()).parse(content);
-        } catch (Exception ex) {
+        }catch (HttpResponseException ex) {
+            var e = new ApiException(ex);
+            e.statusCode = ex.getStatusCode();
+            throw e;
+        } catch (IOException ex) {
             throw new ApiException(ex);
         }
     }
