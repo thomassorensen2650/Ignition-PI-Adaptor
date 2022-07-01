@@ -113,7 +113,7 @@ public class PIHistoryProvider implements TagHistoryProvider {
      * @return
      */
     @Override
-    public Results<Result> browse(QualifiedPath qualifiedPath, BrowseFilter browseFilter)  {
+    public Results<Result> browse(QualifiedPath qualifiedPath, BrowseFilter browseFilter) {
         logger.info("browse(qualifiedPath, browseFilter) called.  qualifiedPath: " + qualifiedPath.toString()
                 + ", browseFilter: " + (browseFilter == null ? "null" : browseFilter.toString()));
 
@@ -190,9 +190,10 @@ public class PIHistoryProvider implements TagHistoryProvider {
             // Browse specific Path on AF Server
         } else if (tagPath.startsWith("Points")) {
             // Browse specific Path on AF Server
-            var x = piClient.getDataServer().getByPath(tagPath);
-            var points = piClient.getDataServer().getPoints(x.get("webId").getAsString(), "", 0, 100, "name");
+
             try {
+                var x = piClient.getDataServer().getByPath(tagPath);
+                var points = piClient.getDataServer().getPoints(x.get("webId").getAsString(), "", 0, 100, "name");
                 for (var piPoint : points) {
                     var name = piPoint.getAsJsonObject().get("name").getAsString();
                     var t = new TagResult();

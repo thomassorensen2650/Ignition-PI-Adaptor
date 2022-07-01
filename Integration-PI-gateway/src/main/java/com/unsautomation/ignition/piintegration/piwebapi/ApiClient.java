@@ -4,6 +4,7 @@ import com.inductiveautomation.ignition.common.gson.JsonElement;
 import com.inductiveautomation.ignition.common.gson.JsonParser;
 import org.apache.http.auth.AuthenticationException;
 import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.conn.ssl.TrustStrategy;
@@ -17,6 +18,8 @@ import org.apache.http.ssl.SSLContextBuilder;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 
 public class ApiClient {
     private final CloseableHttpClient httpClient;
@@ -25,11 +28,16 @@ public class ApiClient {
     private String baseUrl;
     private Boolean verifySSL;
 
+
     public ApiClient(String baseUrl, String username, String password, Boolean verifySsl) throws ApiException {
         this.verifySSL = verifySsl;
         this.baseUrl = baseUrl;
         httpClient = getHttpClient();
+        this.username = username;
+        this.password = password;
     }
+
+    public Boolean getSimulationMode() {return false;}
     /***
      *
      * @param relativeUrl
@@ -66,8 +74,37 @@ public class ApiClient {
         }
     }
 
-    public JsonElement doGet(String relativeUrl) {
-         return null;
+    public JsonElement doGet(String relativeUrl) throws ApiException {
+
+        try {
+            relativeUrl = URLEncoder.encode(relativeUrl, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+            throw new ApiException("Error Setting Authentication", e);
+        }
+
+        var uri = URI.create(baseUrl + relativeUrl);
+         var request = new HttpGet(uri);
+        //request.setHeader("Accept", "application/json");
+        request.setHeader("Content-type", "application/json");
+
+        if (username != "") {
+            var auth = new UsernamePasswordCredentials(username, password);
+            try {
+                request.addHeader(new BasicScheme().authenticate(auth, request, null));
+            } catch (AuthenticationException e) {
+                e.printStackTrace();
+                throw new ApiException("Error Setting Authentication", e);
+            }
+        }
+
+        try {
+            var response = httpClient.execute(request); //, HttpResponse.BodyHandlers.ofString());
+            var content = new BasicResponseHandler().handleResponse(response);
+            return (new JsonParser()).parse(content);
+        } catch (Exception ex) {
+            throw new ApiException(ex);
+        }
     }
     /* Create a HTTP Client
      * @return a configured HTTP Client

@@ -53,7 +53,7 @@ public class CustomApi {
         }
     }
 
-    public String getOrCreateTag(String dataServer, String tagName, JsonObject point) {
+    public String getOrCreateTag(String dataServer, String tagName, JsonObject point) throws ApiException {
 
         var path =  dataServer + "/" + tagName;
         if (tagCache.containsKey(path)) {
@@ -66,7 +66,7 @@ public class CustomApi {
 
         // Tag not qualified
         JsonArray tags = null;
-        tags = dataserver.getPoints(webId, tagName, 0 ,2, null);
+        tags = dataserver.getPoints(webId, tagName, 0 ,1, null);
 
         String tagWebId = null;
         if (tags.size() == 0) {

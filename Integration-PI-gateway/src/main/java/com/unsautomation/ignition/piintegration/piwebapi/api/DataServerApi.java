@@ -27,15 +27,23 @@ public class DataServerApi {
         return r;
     }
 
-    public JsonObject getByPath(String path) {
-        var first = new JsonObject();
-        first.addProperty("webId","First Server");
-        return first;
+    public JsonObject getByPath(String path) throws ApiException {
+
+        if (client.getSimulationMode()) {
+            var first = new JsonObject();
+            first.addProperty("webId","First Server");
+            return first;
+        }
+
+
+        return client.doGet("/dataservers?path=\\\\" + path).getAsJsonObject();
+
+
     }
 
-    public JsonArray getPoints(String dataServerWebId, String nameFilter, Integer startIndex, Integer maxCount, String selectedFields) {
+    public JsonArray getPoints(String dataServerWebId, String nameFilter, Integer startIndex, Integer maxCount, String selectedFields) throws ApiException {
 
-        if (true) {
+        if (client.getSimulationMode()) {
             var r = new JsonArray();
             for (int i = 0; i < 100; i++) {
                 var first = new JsonObject();
@@ -46,13 +54,13 @@ public class DataServerApi {
         }
         var url = String.format("dataservers/%s/points?", dataServerWebId);
         if (null != nameFilter) {
-            url += "nameFilter=" + nameFilter + ";";
+            url += "nameFilter=" + nameFilter + "&";
         }
         if (null != startIndex) {
-            url += "startIndex=" + startIndex + ";";
+            url += "startIndex=" + startIndex + "&";
         }
         if (null != maxCount) {
-            url += "maxCount=" + maxCount + ";";
+            url += "maxCount=" + maxCount + "&";
         }
         return client.doGet(url).getAsJsonObject().get("Items").getAsJsonArray();
     }
