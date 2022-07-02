@@ -26,6 +26,6 @@ public class PointApi {
         }
         var urlParams = client.urlEncode(path);
 
-        return client.doGet("points?path=" + urlParams).getAsJsonObject();
+        return client.doGet("points?path=" + urlParams).getContent().getAsJsonObject();
     }
 }

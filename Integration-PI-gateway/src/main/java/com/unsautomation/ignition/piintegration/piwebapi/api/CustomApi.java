@@ -64,8 +64,30 @@ public class CustomApi {
         }
 
 
-        var tag = this.point.getByPath(path);
-        var tagWebId = tag.getAsJsonObject().get("WebId").getAsString();
+        String tagWebId = null;
+        try {
+            var tag = this.point.getByPath(path);
+            tagWebId = tag.getAsJsonObject().get("WebId").getAsString();
+        } catch (ApiException ex) {
+            if (ex.statusCode == 404) { // Tag not found;
+                var x = new JsonObject();
+                var tagParts = path.substring(2).split("\\\\");
+                var archiver = tagParts[0];
+                var tag = tagParts[1];
+                x.addProperty("Name", tag);
+                x.addProperty("PointType", "Float32");
+                x.addProperty("PointClass", "Classic");
+
+
+                var archiverWebId = this.dataserver.getByPath("\\\\" + archiver).getAsJsonObject().get("WebId").getAsString();
+
+                tagWebId = this.dataserver.createPoint(archiverWebId, x);
+            } else {
+                throw ex;
+            }
+        }
+
+
         // Ignore NotFound Exception, as we want it fail if not found
         //var archiver = dataserver.getByPath(dataServer);
         // var arc = archiver.getAsJsonArray("Items").get(0);

@@ -2,6 +2,7 @@ package com.unsautomation.ignition.piintegration.piwebapi;
 
 import com.inductiveautomation.ignition.common.gson.JsonElement;
 import com.inductiveautomation.ignition.common.gson.JsonParser;
+import com.unsautomation.ignition.piintegration.piwebapi.model.PIResponse;
 import org.apache.http.auth.AuthenticationException;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.HttpResponseException;
@@ -16,6 +17,7 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.ssl.SSLContextBuilder;
+import org.apache.http.util.EntityUtils;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -47,8 +49,8 @@ public class ApiClient {
      * @return
      * @throws ApiException
      */
-     public JsonElement doPost(String relativeUrl, JsonElement requests) throws ApiException {
-         var uri = URI.create(baseUrl + "/" + relativeUrl);
+     public PIResponse doPost(String relativeUrl, JsonElement requests) throws ApiException {
+         var uri = URI.create(baseUrl  + relativeUrl);
          var request = new HttpPost(uri);
         //request.setHeader("Accept", "application/json");
          request.setHeader("Content-type", "application/json");
@@ -68,13 +70,13 @@ public class ApiClient {
         }
 
         try {
-            var response = httpClient.execute(request); //, HttpResponse.BodyHandlers.ofString());
-            var content = new BasicResponseHandler().handleResponse(response);
-            return (new JsonParser()).parse(content);
-        } catch (Exception ex) {
-            throw new ApiException(ex);
+            var response = httpClient.execute(request);
+            return new PIResponse(response);
+        }catch (IOException ex) {
+            throw new ApiException("Unable to POST", ex);
         }
     }
+
 
     public String urlEncode(String toEncode) throws ApiException {
         try {
@@ -85,7 +87,7 @@ public class ApiClient {
         }
         return toEncode;
     }
-    public JsonElement doGet(String relativeUrl) throws ApiException {
+    public PIResponse doGet(String relativeUrl) throws ApiException {
 
 
         var uri = URI.create(baseUrl  + relativeUrl);
@@ -105,14 +107,9 @@ public class ApiClient {
 
         try {
             var response = httpClient.execute(request); //, HttpResponse.BodyHandlers.ofString());
-            var content = new BasicResponseHandler().handleResponse(response);
-            return (new JsonParser()).parse(content);
-        }catch (HttpResponseException ex) {
-            var e = new ApiException(ex);
-            e.statusCode = ex.getStatusCode();
-            throw e;
+            return new PIResponse(response);
         } catch (IOException ex) {
-            throw new ApiException(ex);
+            throw new ApiException("Unknown Exception on doGet", ex);
         }
     }
     /* Create a HTTP Client

@@ -45,7 +45,7 @@ public class StreamApi {
         }
 
         // streams/{webId}/plot
-        return client.doGet("/streams/" + webId + "/plot").getAsJsonObject();
+        return client.doGet("/streams/" + webId + "/plot").getContent().getAsJsonObject();
 
 
 
@@ -87,7 +87,7 @@ public class StreamApi {
             return obj; //resp.getData();
         }
         // streams/{webId}/plot
-        return client.doGet("/streams/" + webId + "/recorded").getAsJsonObject();
+        return client.doGet("/streams/" + webId + "/recorded").getContent().getAsJsonObject();
 
 
     }

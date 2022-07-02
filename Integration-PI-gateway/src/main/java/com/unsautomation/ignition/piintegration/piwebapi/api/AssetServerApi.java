@@ -29,7 +29,7 @@ public class AssetServerApi {
             r.add(second);
             return r;
         }
-        return client.doGet("assetservers").getAsJsonObject().get("Items").getAsJsonArray();
+        return client.doGet("assetservers").getContent().getAsJsonObject().get("Items").getAsJsonArray();
     }
 
 }
