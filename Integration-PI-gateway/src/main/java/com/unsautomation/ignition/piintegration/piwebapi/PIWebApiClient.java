@@ -4,7 +4,6 @@ import com.unsautomation.ignition.piintegration.piwebapi.api.*;
 
 public class PIWebApiClient {
 
-
     private ApiClient apiClient = null;
     private String baseUrl = null;
     private Boolean cacheDisabled = null;
@@ -23,12 +22,20 @@ public class PIWebApiClient {
         return new AssetServerApi(apiClient);
     }
 
+    public AssetDatabaseApi getAssetDatabase() {
+        return new AssetDatabaseApi(apiClient);
+    }
+
     public SearchApi getSearch() {
         return new SearchApi(apiClient);
     }
 
     public DataServerApi getDataServer() {
         return new DataServerApi(apiClient);
+    }
+
+    public ElementApi getElementApi() {
+        return new ElementApi(apiClient);
     }
 
     public StreamApi getStream() {
@@ -42,6 +49,4 @@ public class PIWebApiClient {
     public PointApi getPoint() {return new PointApi(apiClient);}
 
     public CustomApi getCustom() { return new CustomApi(this);}
-
-
 }

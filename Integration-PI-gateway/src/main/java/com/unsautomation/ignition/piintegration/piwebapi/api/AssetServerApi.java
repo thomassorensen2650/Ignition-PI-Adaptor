@@ -19,7 +19,7 @@ public class AssetServerApi {
      */
     public JsonArray list(String selectedFields) throws ApiException {
 
-        if (false) {
+        if (client.getSimulationMode()) {
             var r = new JsonArray();
             var first = new JsonObject();
             first.addProperty("name", "First AF Server");
@@ -30,6 +30,11 @@ public class AssetServerApi {
             return r;
         }
         return client.doGet("assetservers").getContent().getAsJsonObject().get("Items").getAsJsonArray();
+    }
+
+    public JsonArray getAssetDatabases(String assetServerWebId) throws ApiException {
+        var url = String.format("assetservers/%s/assetdatabases",assetServerWebId);
+        return client.doGet(url).getContent().getAsJsonObject().get("Items").getAsJsonArray();
     }
 
 }

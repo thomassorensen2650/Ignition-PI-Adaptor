@@ -19,14 +19,18 @@ public class DataServerApi {
      *
      */
     public JsonArray list(String selectedFields) throws ApiException {
-        var r = new JsonArray();
-        var first = new JsonObject();
-        first.addProperty("name","First Server");
-        var second = new JsonObject();
-        second.addProperty("name", "Second Server");
-        r.add(first);
-        r.add(second);
-        return r;
+        if (client.getSimulationMode()) {
+            var r = new JsonArray();
+            var first = new JsonObject();
+            first.addProperty("name","First Server");
+            var second = new JsonObject();
+            second.addProperty("name", "Second Server");
+            r.add(first);
+            r.add(second);
+            return r;
+        }
+        return client.doGet("dataservers").getContent().getAsJsonObject().get("Items").getAsJsonArray();
+
     }
 
     public JsonObject getByPath(String path) throws ApiException {
@@ -57,7 +61,7 @@ public class DataServerApi {
         }
         var url = String.format("dataservers/%s/points", dataServerWebId);
 
-
+        /*
         if (null != nameFilter) {
             url += "nameFilter=" + client.urlEncode(nameFilter) + "&";
         }
@@ -67,6 +71,7 @@ public class DataServerApi {
         if (null != maxCount) {
             url += "maxCount=" + maxCount + "&";
         }
+        */
         return client.doGet(url).getContent().getAsJsonObject().get("Items").getAsJsonArray();
     }
 

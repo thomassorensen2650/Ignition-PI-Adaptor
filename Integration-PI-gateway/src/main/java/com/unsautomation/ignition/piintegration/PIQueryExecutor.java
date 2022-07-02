@@ -1,6 +1,7 @@
 package com.unsautomation.ignition.piintegration;
 
 import com.inductiveautomation.ignition.common.WellKnownPathTypes;
+import com.inductiveautomation.ignition.common.gson.JsonArray;
 import com.inductiveautomation.ignition.common.gson.JsonObject;
 import com.inductiveautomation.ignition.common.model.values.QualityCode;
 import com.inductiveautomation.ignition.common.sqltags.model.types.DataTypeClass;
@@ -33,7 +34,7 @@ public class PIQueryExecutor  implements HistoryQueryExecutor {
     private List<ColumnQueryDefinition> paths; // Holds the definition of each tag
     protected List<DelegatingHistoryNode> nodes = new ArrayList();
     protected List<ProcessedHistoryColumn> tags;
-    protected JsonObject queryResult;
+    protected JsonArray queryResult;
 
     private PIWebApiClient piClient; // A client for querying data
 
@@ -124,8 +125,7 @@ public class PIQueryExecutor  implements HistoryQueryExecutor {
                 queryResult = piClient.getStream().getPlot(t.toString(), startDate, endDate, interval, null,null,null);
 
             }
-            var dataValues = queryResult.get("Items").getAsJsonArray();
-            for (var dv : dataValues) {
+            for (var dv : queryResult) {
                 //((DelegatingHistoryNode)this.nodes.get(i)).setDelegate(this.buildRealNode(dv));
                 //((DefaultHistoryColumn)((DelegatingHistoryNode)this.nodes.get(i).getDelegate()).process $(this.historicalValue(p));
 

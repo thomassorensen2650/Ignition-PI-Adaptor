@@ -19,7 +19,7 @@ public class StreamApi {
     /**
      * Retrieves values over the specified time range suitable for plotting over the number of intervals (typically represents pixels).
      */
-    public JsonObject getPlot(String webId, Date startTime, Date endTime, Long intervals, String desiredUnits, String selectedFields, String timeZone) throws ApiException, HttpResponseException {
+    public JsonArray getPlot(String webId, Date startTime, Date endTime, Long intervals, String desiredUnits, String selectedFields, String timeZone) throws ApiException, HttpResponseException {
 
         if (client.getSimulationMode()) {
             JsonObject obj = new JsonObject();
@@ -41,11 +41,14 @@ public class StreamApi {
                 items.add(item);
             }
             obj.add("Items", items);
-            return obj; //resp.getData();
+            return items; //resp.getData();
         }
 
-        // streams/{webId}/plot
-        return client.doGet("/streams/" + webId + "/plot").getContent().getAsJsonObject();
+        var queryPath = "?startTime=" + startTime.toInstant().toString() + "&endTime=" + endTime.toInstant().toString()
+                        + "&intervals=" + intervals;
+
+        var url = "/streams/" + webId + "/plot" + queryPath;
+        return client.doGet(url).getContent().getAsJsonObject().get("Items").getAsJsonArray();
 
 
 
@@ -62,7 +65,7 @@ public class StreamApi {
      * @return
      * @throws ApiException
      */
-    public JsonObject getRecorded(String webId, Date startTime, Date endTime, String desiredUnits,  String selectedFields, String timeZone) throws ApiException {
+    public JsonArray getRecorded(String webId, Date startTime, Date endTime, String desiredUnits,  String selectedFields, String timeZone) throws ApiException {
 
         if (client.getSimulationMode()) {
             JsonObject obj = new JsonObject();
@@ -84,10 +87,13 @@ public class StreamApi {
                 items.add(item);
             }
             obj.add("Items", items);
-            return obj; //resp.getData();
+            return items; //resp.getData();
         }
-        // streams/{webId}/plot
-        return client.doGet("/streams/" + webId + "/recorded").getContent().getAsJsonObject();
+        var queryPath = "?startTime=" + startTime.toInstant().toString() + "&endTime=" + endTime.toInstant().toString();
+        var url = "/streams/" + webId + "/recorded" + queryPath;
+
+        //return client.doGet("/streams/" + webId + "/recorded").getContent().getAsJsonObject();
+        return client.doGet(url).getContent().getAsJsonObject().get("Items").getAsJsonArray();
 
 
     }
