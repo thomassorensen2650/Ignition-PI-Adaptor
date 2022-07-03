@@ -7,6 +7,7 @@ import com.inductiveautomation.ignition.common.browsing.BrowseFilter;
 import com.inductiveautomation.ignition.common.browsing.Result;
 import com.inductiveautomation.ignition.common.browsing.Results;
 import com.inductiveautomation.ignition.common.browsing.TagResult;
+import com.inductiveautomation.ignition.common.gson.JsonArray;
 import com.inductiveautomation.ignition.common.model.values.QualityCode;
 import com.inductiveautomation.ignition.common.sqltags.history.Aggregate;
 import com.inductiveautomation.ignition.common.util.Timeline;
@@ -19,9 +20,11 @@ import com.inductiveautomation.ignition.gateway.sqltags.history.query.ColumnQuer
 import com.inductiveautomation.ignition.gateway.sqltags.history.query.QueryController;
 import com.unsautomation.ignition.piintegration.piwebapi.ApiException;
 import com.unsautomation.ignition.piintegration.piwebapi.PIWebApiClient;
+import com.unsautomation.ignition.piintegration.piwebapi.WebIdUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Date;
@@ -107,22 +110,30 @@ public class PIHistoryProvider implements TagHistoryProvider {
         return null;
     }
 
+    public List<TagResult> createResults(JsonArray items, boolean hasChildren) {
+        return null;
+    }
+
+
+
+
     /**
      * Browses for tags available in PI. Returns a tree of tags. The function is called several times,
      * lazy loading, from a specific starting point.
      * @return
      */
     @Override
-    public Results<Result> browse(QualifiedPath qualifiedPath, BrowseFilter browseFilter) {
+    public Results<Result> browse(QualifiedPath qualifiedPath, BrowseFilter browseFilter)  {
         logger.info("browse(qualifiedPath, browseFilter) called.  qualifiedPath: " + qualifiedPath.toString()
                 + ", browseFilter: " + (browseFilter == null ? "null" : browseFilter.toString()));
 
-        var tagPath = qualifiedPath.getPathComponent(WellKnownPathTypes.Tag);
-        var histProv = qualifiedPath.getPathComponent(WellKnownPathTypes.HistoryProvider);
-
-        var result = new Results<Result>();
-        var list = new ArrayList<Result>();
-
+        try {
+            return browseInternal(qualifiedPath);
+        } catch (Exception ex) {
+            logger.error("Unable to browse PI", ex);
+        }
+        return new Results<Result>();
+        /*
         if (null == tagPath) {
             logger.debug("Browsing Root Level");
             var assets = new TagResult();
@@ -173,6 +184,7 @@ public class PIHistoryProvider implements TagHistoryProvider {
         } else if (tagPath.startsWith("Assets")) {
 
             try {
+
                 for (var afServer : piClient.getSearch().AfChildren(tagPath)) {
                     var name = afServer.getAsJsonObject().get("name").getAsString();
                     var server = new TagResult();
@@ -208,7 +220,35 @@ public class PIHistoryProvider implements TagHistoryProvider {
                 e.printStackTrace();
             }
         }
+        */
+    }
+    private Results<Result>  browseInternal(QualifiedPath qualifiedPath) throws ApiException, UnsupportedEncodingException {
+        var tagPath = qualifiedPath.getPathComponent(WellKnownPathTypes.Tag);
+        var histProv = qualifiedPath.getPathComponent(WellKnownPathTypes.HistoryProvider);
 
+        Results<Result> result = new Results<>();
+        var list = new ArrayList<Result>();
+
+        var tagType = PIPathUtilities.findPathType(qualifiedPath);
+        var webId = WebIdUtils.toWebID(qualifiedPath);
+        JsonArray data = new JsonArray();
+        switch (tagType) {
+            case PIAFServer:
+                data = piClient.getAssetDatabase().list(webId, null);
+                break;
+            case PIAFDatabase:
+                data =  piClient.getAssetDatabase().getElements(webId);
+            case PIAFElement:
+                data = piClient.getElementApi().getElements(webId);
+                break;
+            case PIServer:
+                var res = piClient.getDataServer().getPoints(webId, null,null,null,null);
+                data = res.get("Items").getAsJsonArray();
+                break;
+            default:
+                throw new UnsupportedEncodingException("Unable to parse Path " + qualifiedPath.toString());
+        }
+        list.addAll(createResults(data, true));
         result.setResults(list);
         result.setResultQuality(QualityCode.Good);
         return result;

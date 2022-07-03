@@ -48,7 +48,7 @@ public class DataServerApi {
 
     }
 
-    public JsonArray getPoints(String dataServerWebId, String nameFilter, Integer startIndex, Integer maxCount, String selectedFields) throws ApiException{
+    public JsonObject getPoints(String dataServerWebId, String nameFilter, Integer startIndex, Integer maxCount, String selectedFields) throws ApiException{
 
         if (client.getSimulationMode()) {
             var r = new JsonArray();
@@ -57,7 +57,7 @@ public class DataServerApi {
                 first.addProperty("name","Tag" + i);
                 r.add(first);
             }
-            return r;
+            return null;
         }
         var url = String.format("dataservers/%s/points", dataServerWebId);
 
@@ -72,7 +72,7 @@ public class DataServerApi {
             url += "maxCount=" + maxCount + "&";
         }
         */
-        return client.doGet(url).getContent().getAsJsonObject().get("Items").getAsJsonArray();
+        return client.doGet(url).getContent().getAsJsonObject();
     }
 
     /**

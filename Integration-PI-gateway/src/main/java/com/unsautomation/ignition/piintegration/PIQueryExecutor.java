@@ -75,7 +75,6 @@ public class PIQueryExecutor  implements HistoryQueryExecutor {
                 // Set data type to float by default, we can change this later if needed
                 historyTag.setDataType(DataTypeClass.Float);
                 tags.add(historyTag);
-
             }
         }
     }
@@ -123,7 +122,6 @@ public class PIQueryExecutor  implements HistoryQueryExecutor {
                 // TODO: calculate the interval from block size.
                 var interval = (endDate.getTime() - startDate.getTime())/blockSize;
                 queryResult = piClient.getStream().getPlot(t.toString(), startDate, endDate, interval, null,null,null);
-
             }
             for (var dv : queryResult) {
                 //((DelegatingHistoryNode)this.nodes.get(i)).setDelegate(this.buildRealNode(dv));
