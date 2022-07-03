@@ -12,12 +12,11 @@ import java.util.UUID;
 
 public class WebIdUtils {
 
-    public static String tagToWebId(String dataServer, String tagName) {
-        return null;
-    }
-
-    public static String dataServerToWebId(String dataServer) {
-        return null;
+    public static String attributeToWebID(String tagPath) throws ApiException, UnsupportedEncodingException {
+        var index = tagPath.lastIndexOf('/');
+        tagPath = tagPath.substring(0, index)  + "|"
+                + tagPath.substring(index + 1);
+        return WebIdUtils.toWebID("E","Ab", tagPath);
     }
 
     public static String toWebID(String tagPath) throws ApiException, UnsupportedEncodingException {
@@ -64,10 +63,13 @@ public class WebIdUtils {
         } else {
             throw new ApiException("Unable to encode tagpath : " + tagPath);
         }
+        return toWebID(ownerMarker, marker, tagPath);
 
+    }
+
+    public static String toWebID(String ownerMarker, String marker, String tagPath) throws UnsupportedEncodingException {
         tagPath = tagPath.substring(tagPath.indexOf('/')+1).replace('/', '\\');
         tagPath = tagPath.toUpperCase();
-        //tagPath = tagPath.replace("\\", "\\\\");
 
         var encodedPath = encode(tagPath);
         return "P1" + marker + ownerMarker + encodedPath;

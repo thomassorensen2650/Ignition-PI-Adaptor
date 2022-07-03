@@ -45,9 +45,6 @@ public class GatewayHook extends AbstractGatewayModuleHook {
     @Override
     public void startup(LicenseState licenseState) {
 
-
-
-
     }
 
     @Override

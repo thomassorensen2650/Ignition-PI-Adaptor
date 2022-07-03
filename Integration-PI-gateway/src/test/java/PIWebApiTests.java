@@ -103,6 +103,24 @@ public class PIWebApiTests {
         }
     }
 
+    @Test
+    public void xxx() throws Exception {
+        var x = "ASASD/DESKTOP-M7O4A7D/DATABASE2/ELEMENT1/ATTRIBUTE1";
 
+        var index = x.lastIndexOf('/');
+        x = x.substring(0, index)
+                + "|"
+                + x.substring(index + 1);
+
+
+
+        var y = WebIdUtils.toWebID("E","Ab", x);
+
+    }
+
+
+    // Test that attributes can be returned in Plot
+    // Check that we have attributes encoded with a @
+    // check that a attribute that starts with @ works.
 
 }

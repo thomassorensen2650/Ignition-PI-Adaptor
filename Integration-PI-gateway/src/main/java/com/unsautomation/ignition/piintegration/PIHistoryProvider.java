@@ -110,7 +110,7 @@ public class PIHistoryProvider implements TagHistoryProvider {
         List<TagResult> list = new ArrayList<>();
         var tagPath = basePath.getPathComponent(WellKnownPathTypes.Tag);
         for (var item : items) {
-            var name = item.getAsJsonObject().get("name").getAsString();
+            var name = item.getAsJsonObject().get("Name").getAsString();
             var tr = new TagResult();
             var p = basePath.replace(WellKnownPathTypes.Tag, tagPath + "/" + name);
             tr.setHasChildren(hasChildren);
@@ -185,7 +185,7 @@ public class PIHistoryProvider implements TagHistoryProvider {
         var webId = "";
 
         if (!tagType.equals(PIObjectType.Assets) && !tagType.equals(PIObjectType.Points)) {
-            WebIdUtils.toWebID(qualifiedPath);
+            webId = WebIdUtils.toWebID(qualifiedPath);
         }
         var data = new JsonArray();
         var hasChildren = true;

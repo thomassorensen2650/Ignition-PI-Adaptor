@@ -11,12 +11,15 @@ import com.inductiveautomation.ignition.gateway.sqltags.history.query.columns.Pr
 import com.inductiveautomation.ignition.gateway.sqltags.history.query.processing.ProcessedValue;
 import com.inductiveautomation.metro.utils.StringUtils;
 import com.unsautomation.ignition.piintegration.piwebapi.PIWebApiClient;
+import com.unsautomation.ignition.piintegration.piwebapi.WebIdUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URISyntaxException;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -116,24 +119,35 @@ public class PIQueryExecutor  implements HistoryQueryExecutor {
         for (int i = 0; i < paths.size() ; i++) {
             var t = paths.get(i).getPath();
 
+            var tagPath = t.getPathComponent(WellKnownPathTypes.Tag).toUpperCase();
+
+            // FIXME: Quick and Drity..... Need better design
+            var webId = tagPath.startsWith("A") ? WebIdUtils.attributeToWebID(tagPath) : WebIdUtils.toWebID(t);
+            // (String ownerMarker, String marker, String tagPath)
             if (blockSize == 0) {
                 queryResult = piClient.getStream().getRecorded(t.toString(), startDate, endDate, null,null,null);
             } else  {
                 // TODO: calculate the interval from block size.
                 var interval = (endDate.getTime() - startDate.getTime())/blockSize;
-                queryResult = piClient.getStream().getPlot(t.toString(), startDate, endDate, interval, null,null,null);
+                queryResult = piClient.getStream().getPlot(webId, startDate, endDate, interval, null,null,null);
             }
             for (var dv : queryResult) {
                 //((DelegatingHistoryNode)this.nodes.get(i)).setDelegate(this.buildRealNode(dv));
                 //((DefaultHistoryColumn)((DelegatingHistoryNode)this.nodes.get(i).getDelegate()).process $(this.historicalValue(p));
 
-                var v = dv.getAsJsonObject().get("Value").getAsFloat();
+                var v = 0f;
+                var q = QualityCode.Good;
+                try {
+                    v = dv.getAsJsonObject().get("Value").getAsFloat();
+                } catch (Exception ex) {
+                    q = QualityCode.Bad;
+                }
+                
                 var time = dv.getAsJsonObject().get("Timestamp").getAsString();
-                var sourceFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-                var d = sourceFormat.parse(time).getTime();
-
-                var h = new ProcessedValue(v, QualityCode.Good, d,blockSize > 0);
-
+                var instant = Instant.parse (time);
+                var d = instant.toEpochMilli();
+                var h = new ProcessedValue(v, q, d,blockSize > 0);
+                
                 tags.get(i).put(h);
 
                 if (d > this.maxTSInData) {

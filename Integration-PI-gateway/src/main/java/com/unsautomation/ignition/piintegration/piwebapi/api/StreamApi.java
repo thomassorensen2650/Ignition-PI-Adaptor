@@ -48,10 +48,9 @@ public class StreamApi {
                         + "&intervals=" + intervals;
 
         var url = "/streams/" + webId + "/plot" + queryPath;
-        return client.doGet(url).getContent().getAsJsonObject().get("Items").getAsJsonArray();
-
-
-
+        var response = client.doGet(url);
+        var content = response.getContent();
+        return content.getAsJsonObject().get("Items").getAsJsonArray();
     }
 
     /**

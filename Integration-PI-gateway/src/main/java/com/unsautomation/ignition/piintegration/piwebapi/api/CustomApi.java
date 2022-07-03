@@ -39,7 +39,8 @@ public class CustomApi {
      */
     public void ingestRecords(PIHistoryProviderSettings settings, @NotNull List<HistoricalTagValue> records) throws ApiException {
 
-        // Create Write Request
+        return;
+        /* Create Write Request
         for (int i = 0; i < records.size(); i++) {
             var record = records.get(i);
             var tagName = record.getSource().toStringPartial();
@@ -54,6 +55,9 @@ public class CustomApi {
             value.addProperty("timestamp", record.getTimestamp().getTime());
             stream.updateValue(webId, value);
         }
+
+
+         */
     }
 
     public String getOrCreateTag(String dataServer, String tagName, JsonObject point) throws ApiException {

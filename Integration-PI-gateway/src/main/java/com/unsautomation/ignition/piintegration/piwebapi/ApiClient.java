@@ -41,7 +41,7 @@ public class ApiClient {
         this.password = password;
     }
 
-    public Boolean getSimulationMode() {return true;}
+    public Boolean getSimulationMode() {return false;}
     /***
      *
      * @param relativeUrl
@@ -91,8 +91,9 @@ public class ApiClient {
 
 
         var uri = URI.create(baseUrl  + relativeUrl);
-         var request = new HttpGet(uri);
-        //request.setHeader("Accept", "application/json");
+        var request = new HttpGet(uri);
+
+         //request.setHeader("Accept", "application/json");
         request.setHeader("Content-type", "application/json");
 
         if (username != "") {

@@ -58,7 +58,7 @@ public class PIHistoryProviderSettings extends PersistentRecord {
     public String getPIArchiver() {
         return getString(PIServer);
     }
-    public boolean getVerifySSL() { return true; }
+    public boolean getVerifySSL() { return !getBoolean(IgnoreSSLIssues); }
 
     static {
         ProfileId = new LongField(META, "ProfileId", SFieldFlags.SPRIMARY_KEY);
