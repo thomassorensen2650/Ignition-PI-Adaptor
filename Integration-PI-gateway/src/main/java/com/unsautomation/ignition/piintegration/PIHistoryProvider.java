@@ -214,6 +214,7 @@ public class PIHistoryProvider implements TagHistoryProvider {
         return result;
     }
 
+
     @Override
     public TimelineSet queryDensity(
             List<QualifiedPath> tags,
