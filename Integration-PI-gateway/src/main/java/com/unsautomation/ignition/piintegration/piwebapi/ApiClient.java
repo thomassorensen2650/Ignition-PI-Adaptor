@@ -41,7 +41,7 @@ public class ApiClient {
         this.password = password;
     }
 
-    public Boolean getSimulationMode() {return false;}
+    public Boolean getSimulationMode() {return true;}
     /***
      *
      * @param relativeUrl

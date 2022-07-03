@@ -22,9 +22,9 @@ public class WebIdUtils {
 
     public static String toWebID(String tagPath) throws ApiException, UnsupportedEncodingException {
 
-       // tagPath = tagPath.toUpperCase();
+        tagPath = tagPath.toUpperCase();
         var isValid = tagPath != null && tagPath.split("/").length > 1 &&
-                (tagPath.startsWith("Assets/") || tagPath.startsWith("Points/"));
+                (tagPath.startsWith("ASSETS/") || tagPath.startsWith("POINTS/"));
         var marker = "";
         var ownerMarker = "";
 

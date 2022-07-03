@@ -19,6 +19,7 @@ import com.inductiveautomation.ignition.gateway.sqltags.history.TagHistoryProvid
 import com.inductiveautomation.ignition.gateway.sqltags.history.query.ColumnQueryDefinition;
 import com.inductiveautomation.ignition.gateway.sqltags.history.query.QueryController;
 import com.unsautomation.ignition.piintegration.piwebapi.ApiException;
+import com.unsautomation.ignition.piintegration.piwebapi.PIObjectType;
 import com.unsautomation.ignition.piintegration.piwebapi.PIWebApiClient;
 import com.unsautomation.ignition.piintegration.piwebapi.WebIdUtils;
 import org.slf4j.Logger;
@@ -38,7 +39,6 @@ public class PIHistoryProvider implements TagHistoryProvider {
     private PIHistoryProviderSettings settings;
     private PIHistorySink sink;
     private final PIWebApiClient piClient;
-    //private PIQueryClientImpl piClient; // A client for querying data
 
     public PIHistoryProvider(GatewayContext context, String name, PIHistoryProviderSettings settings) throws URISyntaxException, ApiException {
         logger.debug("PIHistoryProvider CTOR Provider");
@@ -55,10 +55,6 @@ public class PIHistoryProvider implements TagHistoryProvider {
             // Create a new data sink with the same name as the provider to store data
             sink = new PIHistorySink(piClient, name, context, settings);
             context.getHistoryManager().registerSink(sink);
-
-            // Create a PI client
-            //ConnectToPI();
-
         } catch (Throwable e) {
             logger.error("Error registering PI history sink", e);
         }
@@ -110,12 +106,48 @@ public class PIHistoryProvider implements TagHistoryProvider {
         return null;
     }
 
-    public List<TagResult> createResults(JsonArray items, boolean hasChildren) {
-        return null;
+    public List<TagResult> createResults(QualifiedPath basePath, JsonArray items, boolean hasChildren) {
+        List<TagResult> list = new ArrayList<>();
+        var tagPath = basePath.getPathComponent(WellKnownPathTypes.Tag);
+        for (var item : items) {
+            var name = item.getAsJsonObject().get("name").getAsString();
+            var tr = new TagResult();
+            var p = basePath.replace(WellKnownPathTypes.Tag, tagPath + "/" + name);
+            tr.setHasChildren(hasChildren);
+            tr.setPath(p);
+            tr.setType(WellKnownPathTypes.Tag);
+            list.add(tr);
+        }
+        return list;
+    }
+
+    public ArrayList<Result> createRootResults(QualifiedPath qualifiedPath) {
+        logger.debug("Browsing Root Level");
+
+        var histProv = qualifiedPath.getPathComponent(WellKnownPathTypes.HistoryProvider);
+        var list = new ArrayList<Result>();
+
+        var assets = new TagResult();
+        var p = QualifiedPathUtils.toPathFromHistoricalString("[" + histProv + "]Assets");
+        assets.setType(WellKnownPathTypes.Tag);
+        assets.setHasChildren(true);
+        assets.setPath(p);
+        list.add(assets);
+
+        var points = new TagResult();
+        var p2 = QualifiedPathUtils.toPathFromHistoricalString("[" + histProv + "]Points");
+        points.setType(WellKnownPathTypes.Tag);
+        points.setHasChildren(true);
+        points.setPath(p2);
+        list.add(points);
+
+        return list;
     }
 
 
-
+    public GatewayContext getContext() {
+        return context;
+    }
 
     /**
      * Browses for tags available in PI. Returns a tree of tags. The function is called several times,
@@ -127,133 +159,77 @@ public class PIHistoryProvider implements TagHistoryProvider {
         logger.info("browse(qualifiedPath, browseFilter) called.  qualifiedPath: " + qualifiedPath.toString()
                 + ", browseFilter: " + (browseFilter == null ? "null" : browseFilter.toString()));
 
+        var tagPath = qualifiedPath.getPathComponent(WellKnownPathTypes.Tag);
+        if (null == tagPath) {
+            // Browse root
+            var list = new ArrayList<Result>();
+            var result = new Results<Result>();
+            list = createRootResults(qualifiedPath);
+            result.setResults(list);
+            result.setResultQuality(QualityCode.Good);
+            return result;
+        }
+
         try {
             return browseInternal(qualifiedPath);
         } catch (Exception ex) {
             logger.error("Unable to browse PI", ex);
         }
         return new Results<Result>();
-        /*
-        if (null == tagPath) {
-            logger.debug("Browsing Root Level");
-            var assets = new TagResult();
-            var p = QualifiedPathUtils.toPathFromHistoricalString("[" + histProv + "]Assets");
-            assets.setType(WellKnownPathTypes.Tag);
-            assets.setHasChildren(true);
-            assets.setPath(p);
-            list.add(assets);
-
-            var points = new TagResult();
-            var p2 = QualifiedPathUtils.toPathFromHistoricalString("[" + histProv + "]Points");
-            points.setType(WellKnownPathTypes.Tag);
-            points.setHasChildren(true);
-            points.setPath(p2);
-            list.add(points);
-
-        } else if (tagPath.equals("Assets")) {
-            try {
-                for (var afServer : piClient.getAssetServer().list("")) {
-                    var name = afServer.getAsJsonObject().get("name").getAsString();
-                    var server = new TagResult();
-                    var p = qualifiedPath.replace(WellKnownPathTypes.Tag, tagPath + "/" + name);
-                    server.setHasChildren(true);
-                    server.setPath(p);
-                    server.setType(WellKnownPathTypes.Tag);
-                    list.add(server);
-                }
-            } catch (ApiException e) {
-                logger.error("Unable to browse " + tagPath, e);
-                e.printStackTrace();
-            }
-        }  else if (tagPath.equals("Points")) {
-
-            try {
-                for (var afServer : piClient.getDataServer().list("name")) {
-                    var name = afServer.getAsJsonObject().get("name").getAsString();
-                    var server = new TagResult();
-                    var p = qualifiedPath.replace(WellKnownPathTypes.Tag, tagPath + "/" + name);
-                    server.setHasChildren(true);
-                    server.setPath(p);
-                    server.setType(WellKnownPathTypes.Tag);
-                    list.add(server);
-                }
-            } catch (ApiException e) {
-                logger.error("Unable to browse " + tagPath, e);
-                e.printStackTrace();
-            }
-        } else if (tagPath.startsWith("Assets")) {
-
-            try {
-
-                for (var afServer : piClient.getSearch().AfChildren(tagPath)) {
-                    var name = afServer.getAsJsonObject().get("name").getAsString();
-                    var server = new TagResult();
-                    var p = qualifiedPath.replace(WellKnownPathTypes.Tag, tagPath + "/" + name);
-                    server.setHasChildren(true);
-                    server.setPath(p);
-                    server.setType(WellKnownPathTypes.Tag);
-                    list.add(server);
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-
-
-            // Browse specific Path on AF Server
-        } else if (tagPath.startsWith("Points")) {
-            // Browse specific Path on AF Server
-
-            try {
-                var x = piClient.getDataServer().getByPath(tagPath);
-                var points = piClient.getDataServer().getPoints(x.get("webId").getAsString(), "", 0, 100, "name");
-                for (var piPoint : points) {
-                    var name = piPoint.getAsJsonObject().get("name").getAsString();
-                    var t = new TagResult();
-                    var p = qualifiedPath.replace(WellKnownPathTypes.Tag, tagPath + "/" + name);
-                    t.setHasChildren(false);
-                    t.setPath(p);
-                    t.setType(WellKnownPathTypes.Tag);
-                    list.add(t);
-                }
-            } catch (Exception e) {
-                logger.error("Error fetching tags", e);
-                e.printStackTrace();
-            }
-        }
-        */
     }
-    private Results<Result>  browseInternal(QualifiedPath qualifiedPath) throws ApiException, UnsupportedEncodingException {
-        var tagPath = qualifiedPath.getPathComponent(WellKnownPathTypes.Tag);
-        var histProv = qualifiedPath.getPathComponent(WellKnownPathTypes.HistoryProvider);
-
+    private Results<Result> browseInternal(QualifiedPath qualifiedPath) throws ApiException, UnsupportedEncodingException {
         Results<Result> result = new Results<>();
         var list = new ArrayList<Result>();
 
         var tagType = PIPathUtilities.findPathType(qualifiedPath);
-        var webId = WebIdUtils.toWebID(qualifiedPath);
-        JsonArray data = new JsonArray();
+        var webId = "";
+
+        if (!tagType.equals(PIObjectType.Assets) && !tagType.equals(PIObjectType.Points)) {
+            WebIdUtils.toWebID(qualifiedPath);
+        }
+        var data = new JsonArray();
+        var hasChildren = true;
+
         switch (tagType) {
+
+            case Assets:
+                data = piClient.getAssetServer().list(null);
+                list.addAll(createResults(qualifiedPath, data, true));
+                break;
             case PIAFServer:
                 data = piClient.getAssetDatabase().list(webId, null);
+                list.addAll(createResults(qualifiedPath, data, true));
                 break;
             case PIAFDatabase:
                 data =  piClient.getAssetDatabase().getElements(webId);
+                list.addAll(createResults(qualifiedPath, data, true));
+                break;
             case PIAFElement:
+                // Child Elements
                 data = piClient.getElementApi().getElements(webId);
+                list.addAll(createResults(qualifiedPath, data, true));
+                // Attributes
+                data = piClient.getElementApi().getAttributes(webId);
+                list.addAll(createResults(qualifiedPath, data, false));
+                break;
+            case Points:
+                data = piClient.getDataServer().list(null);
+                list.addAll(createResults(qualifiedPath, data, true));
                 break;
             case PIServer:
                 var res = piClient.getDataServer().getPoints(webId, null,null,null,null);
                 data = res.get("Items").getAsJsonArray();
+                list.addAll(createResults(qualifiedPath, data, false));
                 break;
             default:
                 throw new UnsupportedEncodingException("Unable to parse Path " + qualifiedPath.toString());
         }
-        list.addAll(createResults(data, true));
+
+        //list.addAll(createResults(qualifiedPath, data, hasChildren));
         result.setResults(list);
         result.setResultQuality(QualityCode.Good);
         return result;
     }
-
 
     @Override
     public TimelineSet queryDensity(

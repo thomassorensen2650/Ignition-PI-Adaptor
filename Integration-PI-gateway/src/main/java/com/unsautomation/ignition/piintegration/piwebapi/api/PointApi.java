@@ -16,12 +16,12 @@ public class PointApi {
         return null;
     }
 
-
     public JsonObject getByPath(String path) throws ApiException {
 
         if (client.getSimulationMode()) {
             var first = new JsonObject();
             first.addProperty("webId","PI Tag");
+            first.addProperty("name","PI Tag");
             return first;
         }
         var urlParams = client.urlEncode(path);

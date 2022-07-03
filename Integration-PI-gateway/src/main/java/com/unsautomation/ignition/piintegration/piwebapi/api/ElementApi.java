@@ -19,6 +19,7 @@ public class ElementApi {
         if (client.getSimulationMode()) {
             var first = new JsonObject();
             first.addProperty("webId","Element");
+            first.addProperty("name","Root Element");
             return first;
         }
         path = client.urlEncode(path);
@@ -26,7 +27,34 @@ public class ElementApi {
     }
 
     public JsonArray getElements(String elementWebId) throws ApiException {
+        if (client.getSimulationMode()) {
+            var r = new JsonArray();
+            var first = new JsonObject();
+            first.addProperty("name", "Child Element");
+            var second = new JsonObject();
+            second.addProperty("name", "Child Element2");
+            r.add(first);
+            r.add(second);
+            return r;
+        }
         var url = String.format("elements/%s/elements",elementWebId);
+        return client.doGet(url).getContent().getAsJsonObject().get("Items").getAsJsonArray();
+    }
+
+    // elements/{webId}/attributes
+    public JsonArray getAttributes(String elementWebId) throws ApiException {
+        if (client.getSimulationMode()) {
+            var r = new JsonArray();
+            var first = new JsonObject();
+            first.addProperty("name", "Attribute 1");
+            var second = new JsonObject();
+            second.addProperty("name", "Attribute 2");
+            r.add(first);
+            r.add(second);
+            return r;
+        }
+
+        var url = String.format("elements/%s/attributes",elementWebId);
         return client.doGet(url).getContent().getAsJsonObject().get("Items").getAsJsonArray();
     }
 

@@ -51,13 +51,15 @@ public class DataServerApi {
     public JsonObject getPoints(String dataServerWebId, String nameFilter, Integer startIndex, Integer maxCount, String selectedFields) throws ApiException{
 
         if (client.getSimulationMode()) {
+            var obj = new JsonObject();
             var r = new JsonArray();
             for (int i = 0; i < 100; i++) {
                 var first = new JsonObject();
                 first.addProperty("name","Tag" + i);
                 r.add(first);
             }
-            return null;
+            obj.add("Items", r);
+            return obj;
         }
         var url = String.format("dataservers/%s/points", dataServerWebId);
 

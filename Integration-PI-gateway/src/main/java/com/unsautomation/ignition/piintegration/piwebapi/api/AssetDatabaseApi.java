@@ -23,9 +23,9 @@ public class AssetDatabaseApi {
         if (client.getSimulationMode()) {
             var r = new JsonArray();
             var first = new JsonObject();
-            first.addProperty("name", "First AF Server");
+            first.addProperty("name", "First AF DB");
             var second = new JsonObject();
-            second.addProperty("name", "Second AF Server");
+            second.addProperty("name", "Second AF DB");
             r.add(first);
             r.add(second);
             return r;
@@ -46,6 +46,14 @@ public class AssetDatabaseApi {
     }
 
     public JsonArray getElements(String afDBWebId) throws ApiException {
+        if (client.getSimulationMode()) {
+            var arr = new JsonArray();
+            var first = new JsonObject();
+            first.addProperty("webId","Element");
+            first.addProperty("name","Element");
+            arr.add(first);
+            return arr;
+        }
         var url = String.format("assetdatabases/%s/elements",afDBWebId);
         return client.doGet(url).getContent().getAsJsonObject().get("Items").getAsJsonArray();
     }
