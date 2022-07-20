@@ -2,7 +2,6 @@ com/unsautomation/ignition/piintegration/PIHistoryProviderType.class
 com/unsautomation/ignition/piintegration/piwebapi/api/PointApi.class
 com/unsautomation/ignition/piintegration/piwebapi/api/SystemApi.class
 com/unsautomation/ignition/piintegration/piwebapi/model/PIRequest.class
-com/unsautomation/ignition/piintegration/piwebapi/model/PIAssetServer.class
 com/unsautomation/ignition/piintegration/PIHistorySink$HistorySinkStatus.class
 com/unsautomation/ignition/piintegration/piwebapi/api/AssetServerApi.class
 com/unsautomation/ignition/piintegration/piwebapi/PIWebApiClient.class
@@ -18,14 +17,11 @@ com/unsautomation/ignition/piintegration/PIHistoryProviderSettings.class
 com/unsautomation/ignition/piintegration/PIHistorySink.class
 com/unsautomation/ignition/piintegration/PIHistoryProvider$1.class
 com/unsautomation/ignition/piintegration/piwebapi/ApiException.class
-com/unsautomation/ignition/piintegration/piwebapi/model/PIElement.class
 com/unsautomation/ignition/piintegration/piwebapi/api/DataServerApi.class
 com/unsautomation/ignition/piintegration/piwebapi/BatchRequestBuilder.class
-com/unsautomation/ignition/piintegration/piwebapi/NotFoundException.class
 com/unsautomation/ignition/piintegration/Impl/batchResponseResult.class
 com/unsautomation/ignition/piintegration/piwebapi/model/PIResponse.class
 com/unsautomation/ignition/piintegration/PIHistoryProvider.class
-com/unsautomation/ignition/piintegration/piwebapi/model/PIAssetDB.class
 com/unsautomation/ignition/piintegration/piwebapi/WebIdUtils.class
 com/unsautomation/ignition/piintegration/piwebapi/api/CustomApi.class
 com/unsautomation/ignition/piintegration/piwebapi/api/SearchApi.class

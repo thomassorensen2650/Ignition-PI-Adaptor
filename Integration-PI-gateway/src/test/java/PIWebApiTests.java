@@ -1,3 +1,4 @@
+import com.inductiveautomation.ignition.common.QualifiedPath;
 import com.unsautomation.ignition.piintegration.piwebapi.ApiException;
 import com.unsautomation.ignition.piintegration.piwebapi.PIWebApiClient;
 import com.unsautomation.ignition.piintegration.piwebapi.WebIdUtils;
@@ -105,16 +106,10 @@ public class PIWebApiTests {
 
     @Test
     public void xxx() throws Exception {
-        var x = "ASASD/DESKTOP-M7O4A7D/DATABASE2/ELEMENT1/ATTRIBUTE1";
 
-        var index = x.lastIndexOf('/');
-        x = x.substring(0, index)
-                + "|"
-                + x.substring(index + 1);
+        var xx = (new QualifiedPath.Builder()).setTag("asdasd//asdasd/asdasd").build();
 
-
-
-        var y = WebIdUtils.toWebID("E","Ab", x);
+        var yy = xx.toString();
 
     }
 

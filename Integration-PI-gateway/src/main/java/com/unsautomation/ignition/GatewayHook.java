@@ -44,7 +44,6 @@ public class GatewayHook extends AbstractGatewayModuleHook {
 
     @Override
     public void startup(LicenseState licenseState) {
-
     }
 
     @Override
@@ -60,5 +59,4 @@ public class GatewayHook extends AbstractGatewayModuleHook {
             logger.error("Error shutting down PI history provider type", ex);
         }
     }
-
 }

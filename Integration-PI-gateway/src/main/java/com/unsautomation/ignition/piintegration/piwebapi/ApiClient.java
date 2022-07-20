@@ -18,6 +18,8 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.ssl.SSLContextBuilder;
 import org.apache.http.util.EntityUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -32,10 +34,16 @@ public class ApiClient {
     private String baseUrl;
     private Boolean verifySSL;
 
+    private final Logger logger = LoggerFactory.getLogger("PIWebApiClient");
 
     public ApiClient(String baseUrl, String username, String password, Boolean verifySsl) throws ApiException {
         this.verifySSL = verifySsl;
+
         this.baseUrl = baseUrl;
+        if (!this.baseUrl.endsWith("/")) {
+            this.baseUrl+= "/";
+        }
+
         httpClient = getHttpClient();
         this.username = username;
         this.password = password;
@@ -52,7 +60,8 @@ public class ApiClient {
      public PIResponse doPost(String relativeUrl, JsonElement requests) throws ApiException {
          var uri = URI.create(baseUrl  + relativeUrl);
          var request = new HttpPost(uri);
-        //request.setHeader("Accept", "application/json");
+         logger.info("Posting: " + uri.toString());
+
          request.setHeader("Content-type", "application/json");
          try {
              request.setEntity(new StringEntity(requests.toString()));
@@ -77,7 +86,12 @@ public class ApiClient {
         }
     }
 
-
+    /***
+     *
+     * @param toEncode
+     * @return
+     * @throws ApiException
+     */
     public String urlEncode(String toEncode) throws ApiException {
         try {
             toEncode = URLEncoder.encode(toEncode, "UTF-8");
@@ -87,12 +101,19 @@ public class ApiClient {
         }
         return toEncode;
     }
-    public PIResponse doGet(String relativeUrl) throws ApiException {
 
+    /***
+     *
+     * @param relativeUrl
+     * @return
+     * @throws ApiException
+     */
+    public PIResponse doGet(String relativeUrl) throws ApiException {
 
         var uri = URI.create(baseUrl  + relativeUrl);
         var request = new HttpGet(uri);
 
+        logger.info("Getting: " + uri.toString());
          //request.setHeader("Accept", "application/json");
         request.setHeader("Content-type", "application/json");
 
@@ -113,6 +134,7 @@ public class ApiClient {
             throw new ApiException("Unknown Exception on doGet", ex);
         }
     }
+
     /* Create a HTTP Client
      * @return a configured HTTP Client
      */

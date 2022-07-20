@@ -65,7 +65,7 @@ public class PIQueryExecutor  implements HistoryQueryExecutor {
         boolean isRaw = controller.getBlockSize() <= 0;
         this.tags = new ArrayList<>();
 
-        for (ColumnQueryDefinition c : paths) {
+        for (var c : paths) {
             var qPath = c.getPath();
             var tagPath = qPath.getPathComponent(WellKnownPathTypes.Tag);
 
@@ -74,7 +74,7 @@ public class PIQueryExecutor  implements HistoryQueryExecutor {
                 //historyTag = new ErrorHistoryColumn(c.getColumnName(), DataTypeClass.Integer, DataQuality.CONFIG_ERROR);
                 logger.debug(controller.getQueryId() + ": The item path '" + c.getPath() + "' does not have a valid tag path component.");
             } else {
-                ProcessedHistoryColumn historyTag = new ProcessedHistoryColumn(c.getColumnName(), isRaw);
+                var historyTag = new ProcessedHistoryColumn(c.getColumnName(), isRaw);
                 // Set data type to float by default, we can change this later if needed
                 historyTag.setDataType(DataTypeClass.Float);
                 tags.add(historyTag);
@@ -87,9 +87,7 @@ public class PIQueryExecutor  implements HistoryQueryExecutor {
      */
     @Override
     public List<? extends HistoryNode> getColumnNodes() {
-        List<HistoryNode> nodes = new ArrayList<>();
-        nodes.addAll(tags);
-        return nodes;
+        return new ArrayList<HistoryNode>(tags);
     }
 
     /**
@@ -118,12 +116,12 @@ public class PIQueryExecutor  implements HistoryQueryExecutor {
 
         for (int i = 0; i < paths.size() ; i++) {
             var t = paths.get(i).getPath();
-
             var tagPath = t.getPathComponent(WellKnownPathTypes.Tag).toUpperCase();
 
-            // FIXME: Quick and Drity..... Need better design
-            var webId = tagPath.startsWith("A") ? WebIdUtils.attributeToWebID(tagPath) : WebIdUtils.toWebID(t);
-            // (String ownerMarker, String marker, String tagPath)
+            // FIXME: Quick and Dirty..... Need better design
+            var webId = tagPath.startsWith("A") ?
+                    WebIdUtils.attributeToWebID(tagPath) :
+                    WebIdUtils.toWebID(t);
             if (blockSize == 0) {
                 queryResult = piClient.getStream().getRecorded(t.toString(), startDate, endDate, null,null,null);
             } else  {
@@ -147,7 +145,6 @@ public class PIQueryExecutor  implements HistoryQueryExecutor {
                 var instant = Instant.parse (time);
                 var d = instant.toEpochMilli();
                 var h = new ProcessedValue(v, q, d,blockSize > 0);
-                
                 tags.get(i).put(h);
 
                 if (d > this.maxTSInData) {
@@ -158,11 +155,8 @@ public class PIQueryExecutor  implements HistoryQueryExecutor {
     }
 
     protected HistoryNode buildRealNode(ColumnQueryDefinition def) {
-        Object ret;
-        ProcessedHistoryColumn c = new ProcessedHistoryColumn(def.getColumnName(), true);
-        //c.setDataType(this.toDataTypeClass(pi.getDataType()));
-        ret = c;
-        return (HistoryNode)ret;
+        var c = new ProcessedHistoryColumn(def.getColumnName(), true);
+        return (HistoryNode)c;
     }
 
     /**
@@ -187,7 +181,7 @@ public class PIQueryExecutor  implements HistoryQueryExecutor {
      */
     @Override
     public void endReading() {
-
+        // NOP
     }
 
     @Override

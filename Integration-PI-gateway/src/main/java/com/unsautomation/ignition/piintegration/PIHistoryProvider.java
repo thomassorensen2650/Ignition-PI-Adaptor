@@ -31,7 +31,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-public class PIHistoryProvider implements TagHistoryProvider {
+// , AnnotationQueryProvider
+public class PIHistoryProvider implements TagHistoryProvider  {
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
     private String name;
@@ -41,17 +42,17 @@ public class PIHistoryProvider implements TagHistoryProvider {
     private final PIWebApiClient piClient;
 
     public PIHistoryProvider(GatewayContext context, String name, PIHistoryProviderSettings settings) throws URISyntaxException, ApiException {
-        logger.debug("PIHistoryProvider CTOR Provider");
+        logger.debug("PIHistoryProvider CTOR");
         this.name = name;
         this.context = context;
         this.settings = settings;
-        piClient = new PIWebApiClient(settings.getWebAPIUrl(), settings.getUsername(), settings.getUsername(), settings.getVerifySSL(), false);
+        piClient = new PIWebApiClient(settings.getWebAPIUrl(), settings.getUsername(), settings.getPassword(), settings.getVerifySSL(), false);
     }
 
     @Override
     public void startup() {
         try {
-            logger.info("Starting Provider");
+            logger.info("Starting PIHistoryProvider Provider");
             // Create a new data sink with the same name as the provider to store data
             sink = new PIHistorySink(piClient, name, context, settings);
             context.getHistoryManager().registerSink(sink);
@@ -177,6 +178,7 @@ public class PIHistoryProvider implements TagHistoryProvider {
         }
         return new Results<Result>();
     }
+
     private Results<Result> browseInternal(QualifiedPath qualifiedPath) throws ApiException, UnsupportedEncodingException {
         Results<Result> result = new Results<>();
         var list = new ArrayList<Result>();
@@ -240,53 +242,27 @@ public class PIHistoryProvider implements TagHistoryProvider {
         logger.info("queryDensity(tags, startDate, endDate, queryId) called.  tags: " + tags.toString()
                 + ", startDate: " + startDate.toString() + ", endDate: " + endDate.toString() + ", queryId: " + queryId);
 
-        ArrayList<Timeline> timelines = new ArrayList<>();
-    /*
-        String queryPrefix = "let startTime = " + Utils.getDateLiteral(startDate) + ";\n" +
-                "let endTime = " + Utils.getDateLiteral(endDate) + ";\n";
-        String queryData = settings.getTableName() + "| where timestamp between(startTime..endTime) ";
-
-        queryData += "| where ";
-        QualifiedPath[] tagKeys = tags.toArray(new QualifiedPath[]{});
-        for (int i = 0; i < tagKeys.length; i++) {
-            QualifiedPath tag = tagKeys[i];
-            String systemName = null;
-            String tagProvider = null;
-            String driver = tag.getPathComponent(WellKnownPathTypes.Driver);
-            if (driver != null) {
-                String[] parts = driver.split(":");
-                systemName = parts[0];
-                tagProvider = parts[1];
-            }
-            String tagPath = tag.getPathComponent(WellKnownPathTypes.Tag);
-
-            queryData += "(systemName has \"" + systemName + "\" and tagProvider has \"" + tagProvider + "\" and tagPath has \"" + tagPath + "\")";
-            if (i < (tagKeys.length - 1)) {
-                queryData += " or ";
-            }
+        var value = 0f;
+        for (var qualifiedPath : tags) {
+            var webId = WebIdUtils.toWebID(qualifiedPath);
+            var response = piClient.getStream().getSummary(webId, startDate, endDate, "PercentGood", "TimeWeighted");
+            var valueWrapper = response.getContent().getAsJsonObject().get("Items").getAsJsonArray().get(0);
+            value += valueWrapper.getAsJsonObject().get("Value").getAsJsonObject().get("value").getAsFloat();
         }
+        // avg. total percent of the time tags are good in the time range
+        value /= tags.size();
 
-        String querySuffix = "| summarize startDate = min(timestamp), endDate = max(timestamp) by systemName, tagProvider, tagPath";
-        String query = queryPrefix + queryData + querySuffix;
-        logger.debug("Issuing query:" + query);
-
-        KustoOperationResult results = kustoQueryClient.execute(settings.getDatabaseName(), query);
-        KustoResultSetTable mainTableResult = results.getPrimaryResults();
-
-        while (mainTableResult.next()) {
-            Timeline t = new Timeline();
-            Timestamp start = mainTableResult.getTimestamp("startDate");
-            Timestamp end = mainTableResult.getTimestamp("endDate");
-            t.addSegment(start.getTime(), end.getTime());
-            timelines.add(t);
-        }
-*/
-
-        Timeline t = new Timeline();
-        t.addSegment(2, 3);
+        var timelines = new ArrayList<Timeline>();
+        var t = new Timeline();
+        t.add(startDate.getTime(), endDate.getTime(), value);
         timelines.add(t);
-
-        TimelineSet timelineSet = new TimelineSet(timelines);
+        var timelineSet = new TimelineSet(timelines);
         return timelineSet;
     }
+
+    /*
+    @Override
+    public List<Annotation> queryAnnotations(List<QualifiedPath> paths, Date start, Date end, TypeFilter filter, String queryId) throws Exception {
+        return null;
+    } */
 }
