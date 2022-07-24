@@ -4,6 +4,7 @@ import com.inductiveautomation.ignition.common.gson.JsonArray;
 import com.inductiveautomation.ignition.common.gson.JsonObject;
 import com.unsautomation.ignition.piintegration.piwebapi.ApiClient;
 import com.unsautomation.ignition.piintegration.piwebapi.ApiException;
+import com.unsautomation.ignition.piintegration.piwebapi.UrlUtils;
 import org.apache.http.client.HttpResponseException;
 
 public class AssetServerApi {
@@ -22,18 +23,20 @@ public class AssetServerApi {
         if (client.getSimulationMode()) {
             var r = new JsonArray();
             var first = new JsonObject();
-            first.addProperty("name", "First AF Server");
+            first.addProperty("Name", "First AF Server");
             var second = new JsonObject();
-            second.addProperty("name", "Second AF Server");
+            second.addProperty("Name", "Second AF Server");
             r.add(first);
             r.add(second);
             return r;
         }
-        return client.doGet("assetservers").getContent().getAsJsonObject().get("Items").getAsJsonArray();
+        var url = UrlUtils.addUrlParameter("assetservers", "selectedFields", selectedFields);
+        return client.doGet(url).getContent().getAsJsonObject().get("Items").getAsJsonArray();
     }
 
-    public JsonArray getAssetDatabases(String assetServerWebId) throws ApiException {
+    public JsonArray getAssetDatabases(String assetServerWebId, String selectedFields) throws ApiException {
         var url = String.format("assetservers/%s/assetdatabases",assetServerWebId);
+        url = UrlUtils.addUrlParameter(url, "selectedFields", selectedFields);
         return client.doGet(url).getContent().getAsJsonObject().get("Items").getAsJsonArray();
     }
 

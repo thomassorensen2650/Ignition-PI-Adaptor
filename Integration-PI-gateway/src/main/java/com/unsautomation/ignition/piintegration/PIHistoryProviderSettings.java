@@ -2,6 +2,7 @@ package com.unsautomation.ignition.piintegration;
 
 import com.inductiveautomation.ignition.gateway.localdb.persistence.*;
 import com.inductiveautomation.ignition.gateway.sqltags.config.TagHistoryProviderRecord;
+import com.inductiveautomation.ignition.gateway.web.components.editors.PasswordEditorSource;
 import simpleorm.dataset.SFieldFlags;
 import simpleorm.dataset.SFieldMeta;
 
@@ -37,8 +38,6 @@ public class PIHistoryProviderSettings extends PersistentRecord {
     static final Category Advanced;
     static final Category Storage;
 
-
-
     public String getWebAPIUrl() {
         var url = getString(PIWebAPIUrl);
 
@@ -51,6 +50,12 @@ public class PIHistoryProviderSettings extends PersistentRecord {
     public String getPassword() {
         return getString(Password);
     }
+
+    public String getPITagPrefix() {
+        return getString(PITagPrefix);
+    }
+
+
     public String getUsername() {
         return getString(Username);
     }
@@ -59,6 +64,15 @@ public class PIHistoryProviderSettings extends PersistentRecord {
         return getString(PIServer);
     }
     public boolean getVerifySSL() { return !getBoolean(IgnoreSSLIssues); }
+
+    public boolean getOnlyBrowsePITagsWithPrefix() { return !getBoolean(OnlyBrowsePITagsWithPrefix); }
+
+
+
+
+    public String getBrowsableAFServers()  { return getString(BrowsableAFServers); }
+
+    public String getBrowsablePIServers()  { return getString(BrowsablePIServers); }
 
     static {
         ProfileId = new LongField(META, "ProfileId", SFieldFlags.SPRIMARY_KEY);
@@ -69,6 +83,8 @@ public class PIHistoryProviderSettings extends PersistentRecord {
         PIWebAPIUrl  = new StringField(META, "piWebAPIUrl", SFieldFlags.SMANDATORY).setDefault("https://localhost/piwebapi");
         Username  = new StringField(META, "userName");
         Password  = new EncodedStringField(META, "password");
+        Password.getFormMeta().setEditorSource(PasswordEditorSource.getSharedInstance());
+
 
         PIServer = new StringField(META, "piServer");
         PITagPrefix = new StringField(META, "piTagPrefix", SFieldFlags.SMANDATORY).setDefault("Ignition");

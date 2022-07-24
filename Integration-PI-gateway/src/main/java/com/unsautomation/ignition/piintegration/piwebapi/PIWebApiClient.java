@@ -4,7 +4,7 @@ import com.unsautomation.ignition.piintegration.piwebapi.api.*;
 
 public class PIWebApiClient {
 
-    private ApiClient apiClient = null;
+    public ApiClient apiClient = null;
     private String baseUrl = null;
     private Boolean cacheDisabled = null;
 

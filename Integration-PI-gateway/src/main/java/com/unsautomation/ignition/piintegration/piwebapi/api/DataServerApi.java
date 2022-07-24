@@ -5,7 +5,10 @@ import com.inductiveautomation.ignition.common.gson.JsonElement;
 import com.inductiveautomation.ignition.common.gson.JsonObject;
 import com.unsautomation.ignition.piintegration.piwebapi.ApiClient;
 import com.unsautomation.ignition.piintegration.piwebapi.ApiException;
+import com.unsautomation.ignition.piintegration.piwebapi.UrlUtils;
 import org.apache.http.client.HttpResponseException;
+
+import java.util.Map;
 
 public class DataServerApi {
 
@@ -22,15 +25,15 @@ public class DataServerApi {
         if (client.getSimulationMode()) {
             var r = new JsonArray();
             var first = new JsonObject();
-            first.addProperty("name","First Server");
+            first.addProperty("Name","First Server");
             var second = new JsonObject();
-            second.addProperty("name", "Second Server");
+            second.addProperty("Name", "Second Server");
             r.add(first);
             r.add(second);
             return r;
         }
-        return client.doGet("dataservers").getContent().getAsJsonObject().get("Items").getAsJsonArray();
-
+        var url = UrlUtils.addUrlParameter("dataservers", "selectedFields", selectedFields);
+        return client.doGet(url).getContent().getAsJsonObject().get("Items").getAsJsonArray();
     }
 
     public JsonObject getByPath(String path) throws ApiException {
@@ -40,12 +43,8 @@ public class DataServerApi {
             first.addProperty("webId","First Server");
             return first;
         }
-
-        path = client.urlEncode(path);
-
-        return client.doGet("dataservers?path=" + path).getContent().getAsJsonObject();
-
-
+        var url = UrlUtils.addUrlParameter("dataservers", "path", path);
+        return client.doGet(url).getContent().getAsJsonObject();
     }
 
     public JsonObject getPoints(String dataServerWebId, String nameFilter, Integer startIndex, Integer maxCount, String selectedFields) throws ApiException{
@@ -53,27 +52,25 @@ public class DataServerApi {
         if (client.getSimulationMode()) {
             var obj = new JsonObject();
             var r = new JsonArray();
-            for (int i = 0; i < 100; i++) {
+
+            // Simulate two data pages.....
+            var tagCount = startIndex == null || startIndex == 0 ? maxCount : maxCount -10;
+            for (int i = 0; i < tagCount; i++) {
                 var first = new JsonObject();
-                first.addProperty("name","Tag" + i);
+                first.addProperty("Name","Tag" + i);
                 r.add(first);
             }
             obj.add("Items", r);
             return obj;
         }
-        var url = String.format("dataservers/%s/points", dataServerWebId);
+        var url = String.format("dataservers/%s/points?", dataServerWebId);
 
-        /*
-        if (null != nameFilter) {
-            url += "nameFilter=" + client.urlEncode(nameFilter) + "&";
-        }
-        if (null != startIndex) {
-            url += "startIndex=" + startIndex + "&";
-        }
-        if (null != maxCount) {
-            url += "maxCount=" + maxCount + "&";
-        }
-        */
+        var parameters = Map.of(
+                "nameFilter",nameFilter,
+                "startIndex", startIndex,
+                "maxCount", maxCount,
+                "selectedFields",selectedFields);
+        url = UrlUtils.addUrlParameters(url, parameters);
         return client.doGet(url).getContent().getAsJsonObject();
     }
 
@@ -89,7 +86,5 @@ public class DataServerApi {
 
         var tagParts = pointUrl.split("/");
         return tagParts[tagParts.length-1];
-
-
     }
 }

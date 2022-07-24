@@ -4,6 +4,7 @@ import com.inductiveautomation.ignition.common.gson.JsonArray;
 import com.inductiveautomation.ignition.common.gson.JsonObject;
 import com.unsautomation.ignition.piintegration.piwebapi.ApiClient;
 import com.unsautomation.ignition.piintegration.piwebapi.ApiException;
+import com.unsautomation.ignition.piintegration.piwebapi.UrlUtils;
 
 public class AssetDatabaseApi {
 
@@ -31,6 +32,8 @@ public class AssetDatabaseApi {
             return r;
         }
         var url = String.format("assetservers/%s/assetdatabases",afServerWebID);
+        url = UrlUtils.addUrlParameter(url, "selectedFields", selectedFields);
+
         return client.doGet(url).getContent().getAsJsonObject().get("Items").getAsJsonArray();
     }
 
@@ -41,7 +44,7 @@ public class AssetDatabaseApi {
             first.addProperty("webId","Element");
             return first;
         }
-        path = client.urlEncode(path);
+        path = UrlUtils.urlEncode(path);
         return client.doGet("assetdatabases?path=" + path).getContent().getAsJsonObject();
     }
 

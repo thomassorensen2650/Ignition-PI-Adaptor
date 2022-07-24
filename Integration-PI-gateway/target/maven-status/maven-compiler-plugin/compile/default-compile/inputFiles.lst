@@ -12,6 +12,7 @@
 /Users/thomassorensen/Documents/Ignition-PI-Adaptor/Integration-PI-gateway/src/main/java/com/unsautomation/ignition/piintegration/piwebapi/api/AssetDatabaseApi.java
 /Users/thomassorensen/Documents/Ignition-PI-Adaptor/Integration-PI-gateway/src/main/java/com/unsautomation/ignition/piintegration/piwebapi/api/StreamApi.java
 /Users/thomassorensen/Documents/Ignition-PI-Adaptor/Integration-PI-gateway/src/main/java/com/unsautomation/ignition/piintegration/piwebapi/api/ElementApi.java
+/Users/thomassorensen/Documents/Ignition-PI-Adaptor/Integration-PI-gateway/src/main/java/com/unsautomation/ignition/piintegration/piwebapi/UrlUtils.java
 /Users/thomassorensen/Documents/Ignition-PI-Adaptor/Integration-PI-gateway/src/main/java/com/unsautomation/ignition/piintegration/piwebapi/ApiClient.java
 /Users/thomassorensen/Documents/Ignition-PI-Adaptor/Integration-PI-gateway/src/main/java/com/unsautomation/ignition/piintegration/piwebapi/api/AssetServerApi.java
 /Users/thomassorensen/Documents/Ignition-PI-Adaptor/Integration-PI-gateway/src/main/java/com/unsautomation/ignition/piintegration/piwebapi/model/PIRequest.java

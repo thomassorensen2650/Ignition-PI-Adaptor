@@ -4,10 +4,12 @@ import com.inductiveautomation.ignition.common.gson.JsonArray;
 import com.inductiveautomation.ignition.common.gson.JsonObject;
 import com.unsautomation.ignition.piintegration.piwebapi.ApiClient;
 import com.unsautomation.ignition.piintegration.piwebapi.ApiException;
+import com.unsautomation.ignition.piintegration.piwebapi.UrlUtils;
 import com.unsautomation.ignition.piintegration.piwebapi.model.PIResponse;
 import org.apache.http.client.HttpResponseException;
 
 import java.util.Date;
+import java.util.Map;
 import java.util.Random;
 
 public class StreamApi {
@@ -48,7 +50,7 @@ public class StreamApi {
         var queryPath = "?startTime=" + startTime.toInstant().toString() + "&endTime=" + endTime.toInstant().toString()
                         + "&intervals=" + intervals;
 
-        var url = "/streams/" + webId + "/plot" + queryPath;
+        var url = "streams/" + webId + "/plot" + queryPath;
         var response = client.doGet(url);
         var content = response.getContent();
         return content.getAsJsonObject().get("Items").getAsJsonArray();
@@ -91,24 +93,29 @@ public class StreamApi {
         }
         var queryPath = "?startTime=" + startTime.toInstant().toString() + "&endTime=" + endTime.toInstant().toString();
         var url = "streams/" + webId + "/recorded" + queryPath;
-
-        //return client.doGet("/streams/" + webId + "/recorded").getContent().getAsJsonObject();
         return client.doGet(url).getContent().getAsJsonObject().get("Items").getAsJsonArray();
     }
 
     public void updateValue(String webId, JsonObject value) {}
 
-
     public PIResponse getSummary(String webId, Date startTime, Date endTime, String summaryType, String calculationBasis) throws ApiException {
-        var queryPath = "?startTime=" + startTime.toInstant().toString() + "&endTime=" + endTime.toInstant().toString() +
+
+        var url = "streams/" + webId + "/summary";
+        var parameters = Map.of(
+                "startTime",startTime.toInstant(),
+                "endTime", endTime.toInstant(),
+                "summaryType", summaryType,
+                "calculationBasis",calculationBasis);
+        url = UrlUtils.addUrlParameters(url, parameters);
+
+       /* var queryPath = "?startTime=" + startTime.toInstant().toString() + "&endTime=" + endTime.toInstant().toString() +
                 "&summaryType=" + summaryType + "&calculationBasis=" + calculationBasis;
         queryPath = client.urlEncode(queryPath);
 
+        */
         if (client.getSimulationMode()) {
             return null; // TODO;
         }
-
-        var url = "streams/" + webId + "/summary" + queryPath;
         return client.doGet(url);
     }
 }

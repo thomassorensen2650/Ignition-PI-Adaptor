@@ -1,31 +1,28 @@
 package com.unsautomation.ignition.piintegration.piwebapi;
 
 import com.inductiveautomation.ignition.common.gson.JsonElement;
-import com.inductiveautomation.ignition.common.gson.JsonParser;
 import com.unsautomation.ignition.piintegration.piwebapi.model.PIResponse;
 import org.apache.http.auth.AuthenticationException;
 import org.apache.http.auth.UsernamePasswordCredentials;
-import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.conn.ssl.TrustStrategy;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.auth.BasicScheme;
-import org.apache.http.impl.client.BasicResponseHandler;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.ssl.SSLContextBuilder;
-import org.apache.http.util.EntityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
+import java.util.Map;
 
 public class ApiClient {
     private final CloseableHttpClient httpClient;
@@ -49,7 +46,7 @@ public class ApiClient {
         this.password = password;
     }
 
-    public Boolean getSimulationMode() {return false;}
+    public Boolean getSimulationMode() {return true;}
     /***
      *
      * @param relativeUrl
@@ -86,21 +83,6 @@ public class ApiClient {
         }
     }
 
-    /***
-     *
-     * @param toEncode
-     * @return
-     * @throws ApiException
-     */
-    public String urlEncode(String toEncode) throws ApiException {
-        try {
-            toEncode = URLEncoder.encode(toEncode, "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-            throw new ApiException("Error Encoding URL Parameters", e);
-        }
-        return toEncode;
-    }
 
     /***
      *

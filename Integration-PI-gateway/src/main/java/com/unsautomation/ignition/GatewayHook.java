@@ -31,7 +31,6 @@ public class GatewayHook extends AbstractGatewayModuleHook {
             logger.error("Unable to verify schema",e);
         }
 
-
         piHistoryProviderType = new PIHistoryProviderType();
 
         // Add PI history provider type

@@ -4,6 +4,7 @@ import com.inductiveautomation.ignition.common.gson.JsonArray;
 import com.inductiveautomation.ignition.common.gson.JsonObject;
 import com.unsautomation.ignition.piintegration.piwebapi.ApiClient;
 import com.unsautomation.ignition.piintegration.piwebapi.ApiException;
+import com.unsautomation.ignition.piintegration.piwebapi.UrlUtils;
 import com.unsautomation.ignition.piintegration.piwebapi.model.PIResponse;
 
 public class ElementApi {
@@ -22,7 +23,7 @@ public class ElementApi {
             first.addProperty("name","Root Element");
             return first;
         }
-        path = client.urlEncode(path);
+        path = UrlUtils.urlEncode(path);
         return client.doGet("elements?path=" + path).getContent().getAsJsonObject();
     }
 
@@ -57,6 +58,4 @@ public class ElementApi {
         var url = String.format("elements/%s/attributes",elementWebId);
         return client.doGet(url).getContent().getAsJsonObject().get("Items").getAsJsonArray();
     }
-
-
 }

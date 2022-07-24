@@ -3,6 +3,7 @@ package com.unsautomation.ignition.piintegration.piwebapi.api;
 import com.inductiveautomation.ignition.common.gson.JsonObject;
 import com.unsautomation.ignition.piintegration.piwebapi.ApiClient;
 import com.unsautomation.ignition.piintegration.piwebapi.ApiException;
+import com.unsautomation.ignition.piintegration.piwebapi.UrlUtils;
 import org.apache.http.client.HttpResponseException;
 
 public class PointApi {
@@ -24,8 +25,7 @@ public class PointApi {
             first.addProperty("name","PI Tag");
             return first;
         }
-        var urlParams = client.urlEncode(path);
-
+        var urlParams = UrlUtils.urlEncode(path);
         return client.doGet("points?path=" + urlParams).getContent().getAsJsonObject();
     }
 }

@@ -25,5 +25,4 @@ public class BatchApi {
        // Convert batch to request
         return apiClient.doPost("batch", batch);
     }
-
 }

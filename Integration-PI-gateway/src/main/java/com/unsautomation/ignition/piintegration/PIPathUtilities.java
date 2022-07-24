@@ -12,10 +12,10 @@ public class PIPathUtilities {
         var tagParts = tagPath.split("/");
 
         if (tagPath.equals("ASSETS")) {
-            return PIObjectType.Assets;
+            return PIObjectType.AssetsRoot;
         }
         if (tagPath.equals("POINTS")) {
-            return PIObjectType.Points;
+            return PIObjectType.PointsRoot;
         }
 
         if (tagPath.startsWith("ASSETS") && tagParts.length == 2) {

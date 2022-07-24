@@ -31,9 +31,13 @@ public class PIHistorySink implements DataSink {
         this.piClient = client;
         this.pipelineName = pipelineName;
         this.context = context;
-        this.settings = settings;
+        setSettings(settings);
         logger.debug("Started Sink with Pipeline: '" + pipelineName + "'");
 
+    }
+
+    public void setSettings(PIHistoryProviderSettings settings) {
+        this.settings = settings;
     }
 
     @Override
@@ -44,48 +48,6 @@ public class PIHistorySink implements DataSink {
     @Override
     public void startup() {
         logger.debug("Startup called");
-
-        /*String clusterURL = settings.getClusterURL();
-        String applicationId = settings.getApplicationId();
-        String applicationKey = settings.getApplicationKey();
-        String aadTenantId = settings.getAADTenantId();
-        database = settings.getDatabaseName();
-
-        String dmUrl = Utils.getDMUriFromSetting(clusterURL);
-        String engineURL = Utils.getEngineUriFromSetting(clusterURL);
-
-        ConnectionStringBuilder connectionString = ConnectionStringBuilder.createWithAadApplicationCredentials(
-                engineURL,
-                applicationId,
-                applicationKey,
-                aadTenantId);
-        ConnectionStringBuilder DmConnectionString = ConnectionStringBuilder.createWithAadApplicationCredentials(
-                dmUrl,
-                applicationId,
-                applicationKey,
-                aadTenantId);
-
-        try {
-            ClientImpl client = new ClientImpl(connectionString);
-
-            try {
-                KustoOperationResult result = client.execute(database, ".show table " + table);
-            } catch (Throwable ex) {
-                try {
-                    client.execute(database, ".create table " + table + " ( systemName:string, tagProvider:string, tagPath:string, value:dynamic, value_double:real, value_integer:int, timestamp:datetime, quality:int)");
-                } catch (Throwable ex2) {
-                    logger.error("Error creating table '" + table + "'", ex2);
-                }
-            }
-            streamingIngestClient = IngestClientFactory.createStreamingIngestClient(connectionString);
-            queuedClient = IngestClientFactory.createClient(DmConnectionString);
-            table = settings.getTableName();
-            ingestionProperties = new IngestionProperties(database, table);
-            ingestionProperties.setDataFormat(IngestionProperties.DATA_FORMAT.csv);
-        } catch (URISyntaxException ex) {
-            logger.error("Error on AzureKustoHistorySink startup ", ex);
-        }
-         */
     }
 
     @Override

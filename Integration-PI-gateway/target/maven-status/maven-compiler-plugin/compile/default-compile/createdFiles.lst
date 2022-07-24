@@ -22,7 +22,9 @@ com/unsautomation/ignition/piintegration/piwebapi/BatchRequestBuilder.class
 com/unsautomation/ignition/piintegration/Impl/batchResponseResult.class
 com/unsautomation/ignition/piintegration/piwebapi/model/PIResponse.class
 com/unsautomation/ignition/piintegration/PIHistoryProvider.class
+com/unsautomation/ignition/piintegration/piwebapi/UrlUtils.class
 com/unsautomation/ignition/piintegration/piwebapi/WebIdUtils.class
+com/unsautomation/ignition/piintegration/PIHistoryProvider$2.class
 com/unsautomation/ignition/piintegration/piwebapi/api/CustomApi.class
 com/unsautomation/ignition/piintegration/piwebapi/api/SearchApi.class
 com/unsautomation/ignition/piintegration/PIQueryExecutor.class
