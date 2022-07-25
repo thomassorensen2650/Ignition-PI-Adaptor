@@ -10,7 +10,7 @@
     <packaging>pom</packaging>
 
     <name>PI Historian</name>
-    <description>Adds PI Historian capability.</description>
+    <description>Adds PI Historian connectivity.</description>
 
     <properties>
        <!-- <ignition-sdk-version>8.1.18</ignition-sdk-version> -->

@@ -35,6 +35,18 @@ public class AssetServerApi {
     }
 
     public JsonArray getAssetDatabases(String assetServerWebId, String selectedFields) throws ApiException {
+
+        if (client.getSimulationMode()) {
+            var r = new JsonArray();
+            var first = new JsonObject();
+            first.addProperty("Name", "First AF DB");
+            var second = new JsonObject();
+            second.addProperty("Name", "Second AF DB");
+            r.add(first);
+            r.add(second);
+            return r;
+        }
+
         var url = String.format("assetservers/%s/assetdatabases",assetServerWebId);
         url = UrlUtils.addUrlParameter(url, "selectedFields", selectedFields);
         return client.doGet(url).getContent().getAsJsonObject().get("Items").getAsJsonArray();

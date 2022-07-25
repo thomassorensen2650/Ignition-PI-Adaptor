@@ -20,7 +20,7 @@ public class ElementApi {
         if (client.getSimulationMode()) {
             var first = new JsonObject();
             first.addProperty("webId","Element");
-            first.addProperty("name","Root Element");
+            first.addProperty("Name","Root Element");
             return first;
         }
         path = UrlUtils.urlEncode(path);
@@ -31,9 +31,9 @@ public class ElementApi {
         if (client.getSimulationMode()) {
             var r = new JsonArray();
             var first = new JsonObject();
-            first.addProperty("name", "Child Element");
+            first.addProperty("Name", "Child Element");
             var second = new JsonObject();
-            second.addProperty("name", "Child Element2");
+            second.addProperty("Name", "Child Element2");
             r.add(first);
             r.add(second);
             return r;
@@ -47,9 +47,9 @@ public class ElementApi {
         if (client.getSimulationMode()) {
             var r = new JsonArray();
             var first = new JsonObject();
-            first.addProperty("name", "Attribute 1");
+            first.addProperty("Name", "Attribute 1");
             var second = new JsonObject();
-            second.addProperty("name", "Attribute 2");
+            second.addProperty("Name", "Attribute 2");
             r.add(first);
             r.add(second);
             return r;

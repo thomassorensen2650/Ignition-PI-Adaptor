@@ -24,9 +24,9 @@ public class AssetDatabaseApi {
         if (client.getSimulationMode()) {
             var r = new JsonArray();
             var first = new JsonObject();
-            first.addProperty("name", "First AF DB");
+            first.addProperty("Name", "First AF DB");
             var second = new JsonObject();
-            second.addProperty("name", "Second AF DB");
+            second.addProperty("Name", "Second AF DB");
             r.add(first);
             r.add(second);
             return r;
@@ -41,7 +41,7 @@ public class AssetDatabaseApi {
 
         if (client.getSimulationMode()) {
             var first = new JsonObject();
-            first.addProperty("webId","Element");
+            first.addProperty("Name","Element");
             return first;
         }
         path = UrlUtils.urlEncode(path);
@@ -53,7 +53,7 @@ public class AssetDatabaseApi {
             var arr = new JsonArray();
             var first = new JsonObject();
             first.addProperty("webId","Element");
-            first.addProperty("name","Element");
+            first.addProperty("Name","Element");
             arr.add(first);
             return arr;
         }

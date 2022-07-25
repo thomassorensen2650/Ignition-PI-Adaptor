@@ -205,7 +205,8 @@ public class PIHistoryProvider implements TagHistoryProvider  {
 
         var result = new Results<Result>();
         try {
-            return browseInternal(qualifiedPath, browseFilter.getContinuationPoint());
+            var cPoint = browseFilter != null ? browseFilter.getContinuationPoint() : null;
+            return browseInternal(qualifiedPath, cPoint);
         } catch (Exception ex) {
             logger.error("Unable to browse PI", ex);
             result.setResultQuality(QualityCode.Bad_Failure);
@@ -273,7 +274,12 @@ public class PIHistoryProvider implements TagHistoryProvider  {
             case PointsRoot: // Top level DataServer List
                 data = piClient.getDataServer().list("Items.Name");
                 data = filterList(data, settings.getBrowsablePIServers());
-                list.addAll(createResults(qualifiedPath, data, true));
+                var r = createResults(qualifiedPath, data, true);
+                if (r.size() == 1) {
+                    logger.info("Browser AF Server only return one server.. browsing DBs");
+                    return browseInternal(r.get(0).getPath(), continuationPoint);
+                }
+                list.addAll(r);
                 break;
             case PIServer:
                 // Search a PI Server for tags
@@ -287,15 +293,15 @@ public class PIHistoryProvider implements TagHistoryProvider  {
                 result.setResultQuality(QualityCode.Bad_Failure);
                 return result;
         }
+        result.setResults(list);
+        result.setResultQuality(QualityCode.Good);
 
-        // TODO: This sucks,
-        if (pagSize == data.size()) { // if the returned data size == pageSize, then there is a good change there is more data pages.
+        // TODO: This does not work
+        if (pagSize == data.size()) { // if the returned data size == pageSize, then there is a good change there are more data pages.
             currentContinuationPoint += pagSize;
             result.setContinuationPoint(currentContinuationPoint.toString());
             result.setTotalAvailableResults(currentContinuationPoint + pagSize); // TODO: Hack to ensure that Ignition will pull another dataPage
         }
-        result.setResults(list);
-        result.setResultQuality(QualityCode.Good);
         return result;
     }
 
@@ -304,12 +310,14 @@ public class PIHistoryProvider implements TagHistoryProvider  {
         if (null == filter || "" == filter) {
             return list;
         }
-        var filterNames = Arrays.stream(filter.toUpperCase().split(","));
+
+
+        var filterNames = Arrays.asList(filter.toUpperCase().split(","));
         var r = new JsonArray();
 
         for (var item : list) {
             var itemName = item.getAsJsonObject().get("Name").getAsString().toUpperCase();
-            if (filterNames.anyMatch(itemName::equals)) {
+            if (filterNames.contains(itemName)) {
                 r.add(item);
             }
         }
