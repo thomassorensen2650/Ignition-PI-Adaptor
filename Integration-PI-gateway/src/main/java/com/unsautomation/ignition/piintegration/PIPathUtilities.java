@@ -17,7 +17,6 @@ public class PIPathUtilities {
         if (tagPath.equals("POINTS")) {
             return PIObjectType.PointsRoot;
         }
-
         if (tagPath.startsWith("ASSETS") && tagParts.length == 2) {
             return PIObjectType.PIAFServer;
         }
@@ -27,7 +26,6 @@ public class PIPathUtilities {
         if (tagPath.startsWith("ASSETS") && tagParts.length > 3) {
             return PIObjectType.PIAFElement;
         }
-
         if (tagPath.startsWith("POINTS") && tagParts.length == 2) {
             return PIObjectType.PIServer;
         }
@@ -36,17 +34,4 @@ public class PIPathUtilities {
         }
         return PIObjectType.Unknown;
     }
-
-    public static QualifiedPath AppendToPath(String pathItem) {
-        return null;
-    }
-
-    public static QualifiedPath createPath(String path, Boolean hasChildren) {
-        return null;
-    }
-
-    public static String getItemFromPath(QualifiedPath path) {
-        return null;
-    }
-
 }

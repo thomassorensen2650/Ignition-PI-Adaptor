@@ -4,9 +4,12 @@ import com.inductiveautomation.ignition.common.WellKnownPathTypes;
 import com.inductiveautomation.ignition.common.gson.JsonArray;
 import com.inductiveautomation.ignition.common.gson.JsonObject;
 import com.inductiveautomation.ignition.common.model.values.QualityCode;
+import com.inductiveautomation.ignition.common.sqltags.model.types.DataQuality;
 import com.inductiveautomation.ignition.common.sqltags.model.types.DataTypeClass;
 import com.inductiveautomation.ignition.gateway.model.GatewayContext;
 import com.inductiveautomation.ignition.gateway.sqltags.history.query.*;
+import com.inductiveautomation.ignition.gateway.sqltags.history.query.columns.DefaultHistoryColumn;
+import com.inductiveautomation.ignition.gateway.sqltags.history.query.columns.ErrorHistoryColumn;
 import com.inductiveautomation.ignition.gateway.sqltags.history.query.columns.ProcessedHistoryColumn;
 import com.inductiveautomation.ignition.gateway.sqltags.history.query.processing.ProcessedValue;
 import com.inductiveautomation.metro.utils.StringUtils;
@@ -31,7 +34,7 @@ import java.util.List;
 public class PIQueryExecutor  implements HistoryQueryExecutor {
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    private GatewayContext context;
+    private final GatewayContext context;
     private PIHistoryProviderSettings settings; // Holds the settings for the current provider, needed to connect to ADX
     private QueryController controller; // Holds the settings for what the user wants to query
     private List<ColumnQueryDefinition> paths; // Holds the definition of each tag
@@ -71,8 +74,9 @@ public class PIQueryExecutor  implements HistoryQueryExecutor {
 
             if (StringUtils.isBlank(tagPath)) {
                 // We set the data type to Integer here, because if the column is going to be errored, at least integer types won't cause charts to complain.
-                //historyTag = new ErrorHistoryColumn(c.getColumnName(), DataTypeClass.Integer, DataQuality.CONFIG_ERROR);
-                logger.debug(controller.getQueryId() + ": The item path '" + c.getPath() + "' does not have a valid tag path component.");
+                //var historyTag = new ErrorHistoryColumn(c.getColumnName(), DataTypeClass.Integer, QualityCode.Error_Configuration);
+                logger.error(controller.getQueryId() + ": The item path '" + c.getPath() + "' does not have a valid tag path component.");
+
             } else {
                 var historyTag = new ProcessedHistoryColumn(c.getColumnName(), isRaw);
                 // Set data type to float by default, we can change this later if needed
@@ -114,25 +118,41 @@ public class PIQueryExecutor  implements HistoryQueryExecutor {
         logger.debug("startReading(blockSize, startDate, endDate) called.  blockSize: " + blockSize
                 + ", startDate: " + startDate.toString() + ", endDate: " + endDate.toString() + " pathSize:" + paths.size());
 
+        // TODO: Maybe this should be wrapped in PI BatchRequest to save PI server roundtrips?
         for (int i = 0; i < paths.size() ; i++) {
             var t = paths.get(i).getPath();
             var tagPath = t.getPathComponent(WellKnownPathTypes.Tag).toUpperCase();
 
             // FIXME: Quick and Dirty..... Need better design
+            // If we try to read from ASSETS then we know its a attribute
+            // otherwise its a PI Tag. Should we encode Attributes differently?? maybe | delimited? (would that even work in Ignition?)
             var webId = tagPath.startsWith("A") ?
                     WebIdUtils.attributeToWebID(tagPath) :
                     WebIdUtils.toWebID(t);
             if (blockSize == 0) {
-                queryResult = piClient.getStream().getRecorded(t.toString(), startDate, endDate, null,null,null);
+                logger.debug("Fetching raw PI data");
+                var d =  piClient.getStream().getRecorded(t.toString(), startDate, endDate, null,null,null);
+                queryResult = d.getContent().getAsJsonArray("Items");
             } else  {
-                // TODO: calculate the interval from block size.
-                var interval = (endDate.getTime() - startDate.getTime())/blockSize;
-                queryResult = piClient.getStream().getPlot(webId, startDate, endDate, interval, null,null,null);
+                var function = PIAggregates.getPiAggregate(controller.getQueryParameters().getAggregationMode());
+                logger.debug("Fetching data using Pi Aggregate " + function);
+                if ("Plot" == function) {
+                    var interval = (endDate.getTime() - startDate.getTime())/blockSize;
+                    queryResult = piClient.getStream().getPlot(webId, startDate, endDate, interval, null,null,null);
+                } else {
+                    var d = piClient.getStream().getSummary(webId, startDate, endDate, function, "TimeWeighted");
+                    queryResult = d.getContent().getAsJsonArray("Items");
+                }
             }
             for (var dv : queryResult) {
-                //((DelegatingHistoryNode)this.nodes.get(i)).setDelegate(this.buildRealNode(dv));
-                //((DefaultHistoryColumn)((DelegatingHistoryNode)this.nodes.get(i).getDelegate()).process $(this.historicalValue(p));
 
+                //((DelegatingHistoryNode)this.nodes.get(i)).setDelegate(this.buildRealNode(dv));
+                //var x = (DefaultHistoryColumn)this.nodes.get(i).getDelegate();
+                //x.process(this.historicalValue(p));
+
+                var value = new PITagValue(dv.getAsJsonObject());
+                var ts = value.getTimestamp();
+                /*
                 var v = 0f;
                 var q = QualityCode.Good;
                 try {
@@ -144,18 +164,24 @@ public class PIQueryExecutor  implements HistoryQueryExecutor {
                 var time = dv.getAsJsonObject().get("Timestamp").getAsString();
                 var instant = Instant.parse (time);
                 var d = instant.toEpochMilli();
-                var h = new ProcessedValue(v, q, d,blockSize > 0);
+
+                 */
+                var h = new ProcessedValue(value.getAsFloat(), value.getQuality(), ts,blockSize > 0);
                 tags.get(i).put(h);
 
-                if (d > this.maxTSInData) {
-                    this.maxTSInData = d;
+                if (ts > this.maxTSInData) {
+                    this.maxTSInData = ts;
                 }
             }
         }
     }
 
     protected HistoryNode buildRealNode(ColumnQueryDefinition def) {
+        // TODO: What is the purpose of this function?? and why is it called from a delegate?
         var c = new ProcessedHistoryColumn(def.getColumnName(), true);
+        c.setDataType(
+                DataTypeClass.Float
+        );
         return (HistoryNode)c;
     }
 

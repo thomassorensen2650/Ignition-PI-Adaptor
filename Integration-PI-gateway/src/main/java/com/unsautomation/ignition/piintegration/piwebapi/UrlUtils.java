@@ -35,7 +35,7 @@ public class UrlUtils {
     public static String addUrlParameters(String url, Map<String, ? extends Serializable> parameters) throws ApiException {
         for (var parameter : parameters.entrySet()) {
             if (null != parameter.getValue()) {
-                url = addUrlParameter(url, parameter.getKey(), urlEncode(parameter.getValue().toString()));
+                url = addUrlParameter(url, parameter.getKey(), parameter.getValue().toString());
             }
         }
         return url;
@@ -48,13 +48,13 @@ public class UrlUtils {
      * @param value
      * @return
      */
-    public static String addUrlParameter(String url, String parameter, String value) {
+    public static String addUrlParameter(String url, String parameter, String value) throws ApiException {
         if (!url.contains("?")) {
             url += "?";
         } else if (!url.endsWith("&") && !url.endsWith("?")) {
             url += "&";
         }
-        url += parameter + "=" + value; //String.format("%s%s=%s",url,parameter,value);
+        url += parameter + "=" + urlEncode(value); //String.format("%s%s=%s",url,parameter,value);
         return url;
     }
 }

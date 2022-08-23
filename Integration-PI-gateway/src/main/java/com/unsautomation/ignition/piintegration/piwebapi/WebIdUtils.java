@@ -24,47 +24,44 @@ public class WebIdUtils {
         tagPath = tagPath.toUpperCase();
         var isValid = tagPath != null && tagPath.split("/").length > 1 &&
                 (tagPath.startsWith("ASSETS/") || tagPath.startsWith("POINTS/"));
+
+        if (!isValid) throw new ApiException("Unable to encode tag path : " + tagPath);
+
         var marker = "";
         var ownerMarker = "";
 
-        if (isValid) {
+        var tagParts = tagPath.split("/");
+        var tagType = tagParts[0].toUpperCase();
 
-            var tagParts = tagPath.split("/");
-            var tagType = tagParts[0].toUpperCase();
-
-            if (tagType.equals("ASSETS") && tagParts.length == 2) {
-                // Encoding a Asset Server ID
-                marker = "RS";
-            } else if (tagType.equals("ASSETS") && tagParts.length == 3) {
-                // Encoding Asset DB
-                //ownerMarker = "R";
-                ownerMarker = "";
-                marker = "RD";
-            } else if (tagType.equals("ASSETS")) {
-                // AF Element
-                //ownerMarker = "RD";
-                ownerMarker = "";
-                marker = "Em";
-            } else if (tagType.equals("POINTS") && tagParts.length == 2) {
-                // Encoding a PI Server
-                marker = "DS";
-                ownerMarker = "";
-            } else if (tagType.equals("POINTS") && tagParts.length == 3) {
-                // Encoding Asset DB
-                ownerMarker = "";// "DS";
-                marker = "DP";
-            } else if (tagType.equals("POINTS")) {
-                // AF Element
-                ownerMarker = "RD";
-                marker = "Em";
-            } else {
-                throw new ApiException("unknown tagpath : " + tagPath);
-            }
+        if (tagType.equals("ASSETS") && tagParts.length == 2) {
+            // Encoding Asset Server ID
+            marker = "RS";
+        } else if (tagType.equals("ASSETS") && tagParts.length == 3) {
+            // Encoding Asset DB
+            //ownerMarker = "R";
+            ownerMarker = "";
+            marker = "RD";
+        } else if (tagType.equals("ASSETS")) {
+            // AF Element
+            //ownerMarker = "RD";
+            ownerMarker = "";
+            marker = "Em";
+        } else if (tagType.equals("POINTS") && tagParts.length == 2) {
+            // Encoding a PI Server
+            marker = "DS";
+            ownerMarker = "";
+        } else if (tagType.equals("POINTS") && tagParts.length == 3) {
+            // Encoding Asset DB
+            ownerMarker = "";// "DS";
+            marker = "DP";
+        } else if (tagType.equals("POINTS")) {
+            // AF Element
+            ownerMarker = "RD";
+            marker = "Em";
         } else {
-            throw new ApiException("Unable to encode tagpath : " + tagPath);
+            throw new ApiException("unknown tagpath : " + tagPath);
         }
         return toWebID(ownerMarker, marker, tagPath);
-
     }
 
     public static String toWebID(String ownerMarker, String marker, String tagPath) throws UnsupportedEncodingException {
@@ -75,31 +72,23 @@ public class WebIdUtils {
         return "P1" + marker + ownerMarker + encodedPath;
     }
 
-
     public static String toWebID(QualifiedPath path) throws ApiException, UnsupportedEncodingException {
         var tagPath = path.getPathComponent(WellKnownPathTypes.Tag).toUpperCase();
         return toWebID(tagPath);
-
     }
 
-
-
-    public static String encode(String value) throws UnsupportedEncodingException
-    {
-
+    public static String encode(String value) throws UnsupportedEncodingException {
         byte[] bytes = value.getBytes(StandardCharsets.UTF_8);
         return encode(bytes);
     }
 
-    public static String encode(byte[] bytes)
-    {
-        String value =  Base64.getEncoder().encodeToString(bytes);
+    public static String encode(byte[] bytes) {
+        var value =  Base64.getEncoder().encodeToString(bytes);
         value = trimStringByString(value, "=");
         return value.replace('+', '-').replace('/', '_');
     }
 
-    public static String encode(UUID value)
-    {
+    public static String encode(UUID value) {
         byte[] bytes = value.toString().getBytes();
         return encode(bytes);
     }

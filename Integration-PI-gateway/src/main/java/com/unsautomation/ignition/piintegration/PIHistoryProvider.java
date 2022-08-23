@@ -33,13 +33,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 // , AnnotationQueryProvider
 public class PIHistoryProvider implements TagHistoryProvider  {
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    private String name;
-    private GatewayContext context;
+    private final String name;
+    private final GatewayContext context;
     private PIHistoryProviderSettings settings;
     private PIHistorySink sink;
     private PIWebApiClient piClient;
@@ -51,7 +52,7 @@ public class PIHistoryProvider implements TagHistoryProvider  {
         setSettings(settings);
 
         // FIXME: Need to read up opn this stuff... Pretty crappy solution.
-        settings.META.addRecordListener(new RecordListenerAdapter<PIHistoryProviderSettings>() {
+        settings.META.addRecordListener(new RecordListenerAdapter<>() {
             @Override
             public void recordUpdated(PIHistoryProviderSettings record) {
                 //applyNewSettings(record);
@@ -105,20 +106,21 @@ public class PIHistoryProvider implements TagHistoryProvider  {
 
     @Override
     public List<Aggregate> getAvailableAggregates() {
-        // TODO: Determine the list of aggregate functions that the module supports
-        return new ArrayList<Aggregate>();
+        final var values = Arrays.stream(PIAggregates.values()).map(n -> n.getIgnitionAggregate()).collect(Collectors.toList());;
+        return values;
     }
 
     @Override
     public ProfileStatus getStatus() {
-        // TODO: Determine status for retrieval
-        //return ProfileStatus.RUNNING;
         return piClient.getCustom().isAvailable() ? ProfileStatus.RUNNING : ProfileStatus.ERRORED;
     }
 
     @Override
     public TagHistoryProviderInformation getStatusInformation() {
-        return TagHistoryProviderInformation.newBuilder().allowsStorage(true).status(getStatus()).name(getName())
+        return TagHistoryProviderInformation.newBuilder()
+                .allowsStorage(true)
+                .status(getStatus())
+                .name(getName())
                 .build();
     }
 
@@ -126,7 +128,6 @@ public class PIHistoryProvider implements TagHistoryProvider  {
     public PIQueryExecutor createQuery(List<ColumnQueryDefinition> tags, QueryController queryController) {
         logger.info("createQuery(tags, queryController) called.  tags: " + tags.toString()
                 + ", queryController: " + queryController.toString());
-
         try {
             return new PIQueryExecutor(piClient, context, settings, tags, queryController);
         } catch (Exception e) {
@@ -135,7 +136,7 @@ public class PIHistoryProvider implements TagHistoryProvider  {
         return null;
     }
 
-    public List<TagResult> createResults(QualifiedPath basePath, JsonArray items, boolean hasChildren) {
+    private List<TagResult> createResults(QualifiedPath basePath, JsonArray items, boolean hasChildren) {
         var list = new ArrayList<TagResult>();
         var tagPath = basePath.getPathComponent(WellKnownPathTypes.Tag);
         for (var item : items) {
@@ -155,7 +156,7 @@ public class PIHistoryProvider implements TagHistoryProvider  {
         return list;
     }
 
-    public ArrayList<Result> createRootResults(QualifiedPath qualifiedPath) {
+    private ArrayList<Result> createRootResults(QualifiedPath qualifiedPath) {
         logger.debug("Browsing Root Level");
 
         var histProv = qualifiedPath.getPathComponent(WellKnownPathTypes.HistoryProvider);
@@ -192,20 +193,19 @@ public class PIHistoryProvider implements TagHistoryProvider  {
         logger.info("browse(qualifiedPath, browseFilter) called.  qualifiedPath: " + qualifiedPath.toString()
                 + ", browseFilter: " + (browseFilter == null ? "null" : browseFilter.toString()));
 
-        var tagPath = qualifiedPath.getPathComponent(WellKnownPathTypes.Tag);
+        final var tagPath = qualifiedPath.getPathComponent(WellKnownPathTypes.Tag);
         if (null == tagPath) {
             // Browse root
-            var list = new ArrayList<Result>();
-            var result = new Results<Result>();
-            list = createRootResults(qualifiedPath);
+            final var result = new Results<Result>();
+            final var list = createRootResults(qualifiedPath);
             result.setResults(list);
             result.setResultQuality(QualityCode.Good);
             return result;
         }
 
-        var result = new Results<Result>();
+        final var result = new Results<Result>();
         try {
-            var cPoint = browseFilter != null ? browseFilter.getContinuationPoint() : null;
+            final var cPoint = browseFilter != null ? browseFilter.getContinuationPoint() : null;
             return browseInternal(qualifiedPath, cPoint);
         } catch (Exception ex) {
             logger.error("Unable to browse PI", ex);
@@ -218,18 +218,20 @@ public class PIHistoryProvider implements TagHistoryProvider  {
         final int pagSize = 100;
         Integer currentContinuationPoint = 0;
 
+        // TODO: Looks like Ignition does not support ContinuationPoint on browse
+        /*
         if (null != continuationPoint) {
             try {
                 currentContinuationPoint = Integer.parseInt(continuationPoint);
             }catch (Exception e) {
                 logger.error("Unable to parse continuationPoint :" + continuationPoint);
             }
-        }
+        }*/
 
-        var result = new Results<Result>();
-        var list = new ArrayList<Result>();
+        final var result = new Results<Result>();
+        final var list = new ArrayList<Result>();
 
-        var tagType = PIPathUtilities.findPathType(qualifiedPath);
+        final var tagType = PIPathUtilities.findPathType(qualifiedPath);
         var webId = "";
 
         if (!tagType.equals(PIObjectType.AssetsRoot) && !tagType.equals(PIObjectType.PointsRoot)) {
@@ -238,7 +240,6 @@ public class PIHistoryProvider implements TagHistoryProvider  {
         var data = new JsonArray();
 
         switch (tagType) {
-
             case AssetsRoot: // Top level Elements search
                 data = piClient.getAssetServer().list(null);
                 data = filterList(data, settings.getBrowsableAFServers());
@@ -246,13 +247,9 @@ public class PIHistoryProvider implements TagHistoryProvider  {
                 break;
             case PIAFServer:
                 data = piClient.getAssetDatabase().list(webId, "Items.Name");
-
-                //data = filterList(data, settings.)
                 var res = createResults(qualifiedPath, data, true);
 
                 // If there are only one server, then show DBs directly..
-                // this makes the user experience nicer
-                // TODO Test that this actually works???
                 if (res.size() == 1) {
                     logger.info("Browser AF Server only return one server.. browsing DBs");
                     return browseInternal(res.get(0).getPath(), continuationPoint);
@@ -297,26 +294,23 @@ public class PIHistoryProvider implements TagHistoryProvider  {
         result.setResultQuality(QualityCode.Good);
 
         // TODO: This does not work
-        if (pagSize == data.size()) { // if the returned data size == pageSize, then there is a good change there are more data pages.
+        /*if (pagSize == data.size()) { // if the returned data size == pageSize, then there is a good change there are more data pages.
             currentContinuationPoint += pagSize;
             result.setContinuationPoint(currentContinuationPoint.toString());
             result.setTotalAvailableResults(currentContinuationPoint + pagSize); // TODO: Hack to ensure that Ignition will pull another dataPage
-        }
+        }*/
         return result;
     }
-
 
     private JsonArray filterList(JsonArray list, String filter) {
         if (null == filter || "" == filter) {
             return list;
         }
-
-
-        var filterNames = Arrays.asList(filter.toUpperCase().split(","));
-        var r = new JsonArray();
+        final var filterNames = Arrays.asList(filter.toUpperCase().split(","));
+        final var r = new JsonArray();
 
         for (var item : list) {
-            var itemName = item.getAsJsonObject().get("Name").getAsString().toUpperCase();
+            final var itemName = item.getAsJsonObject().get("Name").getAsString().toUpperCase();
             if (filterNames.contains(itemName)) {
                 r.add(item);
             }
@@ -334,9 +328,9 @@ public class PIHistoryProvider implements TagHistoryProvider  {
 
         var value = 0f;
         for (var qualifiedPath : tags) {
-            var webId = WebIdUtils.toWebID(qualifiedPath);
-            var response = piClient.getStream().getSummary(webId, startDate, endDate, "PercentGood", "TimeWeighted");
-            var valueWrapper = response.getContent().getAsJsonObject().get("Items").getAsJsonArray().get(0);
+            final var webId = WebIdUtils.toWebID(qualifiedPath);
+            final var response = piClient.getStream().getSummary(webId, startDate, endDate, "PercentGood", "TimeWeighted");
+            final var valueWrapper = response.getContent().getAsJsonObject().get("Items").getAsJsonArray().get(0);
             value += valueWrapper.getAsJsonObject().get("Value").getAsJsonObject().get("value").getAsFloat();
         }
         // avg. total percent of the time tags are good in the time range

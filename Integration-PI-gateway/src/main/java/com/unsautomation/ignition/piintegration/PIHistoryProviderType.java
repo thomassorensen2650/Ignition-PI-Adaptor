@@ -31,13 +31,9 @@ public class PIHistoryProviderType extends TagHistoryProviderType {
     public TagHistoryProvider createHistoryProvider(TagHistoryProviderRecord profile, GatewayContext context)
             throws Exception {
         PIHistoryProviderSettings settings = findProfileSettingsRecord(context, profile);
-
-
-        PIHistoryProvider ret = new PIHistoryProvider(context, profile.getName(), settings);
+        final var ret = new PIHistoryProvider(context, profile.getName(), settings);
         return ret;
     }
-
-
 
     @Override
     public boolean supportsStorage() {

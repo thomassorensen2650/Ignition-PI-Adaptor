@@ -37,27 +37,27 @@ public class CustomApi {
      * @throws IOException
      * @throws InterruptedException
      */
-    public void ingestRecords(PIHistoryProviderSettings settings, @NotNull List<HistoricalTagValue> records) throws ApiException {
+    public void ingestRecords(@NotNull List<HistoricalTagValue> records, String tagPrefix, String piArchiver) throws ApiException {
 
-        return;
-        /* Create Write Request
+        // Create Write Request
         for (int i = 0; i < records.size(); i++) {
             var record = records.get(i);
             var tagName = record.getSource().toStringPartial();
+
+            if (tagPrefix != null && tagPrefix != "") {
+                tagName = tagPrefix + tagName;
+            }
             var type = record.getTypeClass().isNumeric() ?
                     record.getTypeClass().getDataType().isFloatingPoint() ? "Float" : "Int32"  : "String";
             var point = new JsonObject();
             point.addProperty("Name", tagName);
             point.addProperty("PointType", type);
-            var webId = getOrCreateTag(settings.getPIArchiver(), tagName, point);
+            var webId = getOrCreateTag(piArchiver, tagName, point);
             var value = new JsonObject();
             value.addProperty("value", (Number) record.getValue()); // FIXME: What about texts
             value.addProperty("timestamp", record.getTimestamp().getTime());
             stream.updateValue(webId, value);
         }
-
-
-         */
     }
 
     public String getOrCreateTag(String dataServer, String tagName, JsonObject point) throws ApiException {

@@ -95,7 +95,8 @@ public class PIWebApiTests {
         var endTime = new Date();
         var d1 = WebIdUtils.toWebID(test);
         var r1 = c.getStream().getRecorded(d1, startTime,endTime,null,null, null);
-        var size = r1.size();
+
+        var size = r1.getContent().getAsJsonArray("Items").size();
 
         if (size < 1) {
             throw new Exception("AF Server not found");

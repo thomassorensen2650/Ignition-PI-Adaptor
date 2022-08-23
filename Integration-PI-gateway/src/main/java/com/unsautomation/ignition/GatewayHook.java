@@ -46,6 +46,10 @@ public class GatewayHook extends AbstractGatewayModuleHook {
     }
 
     @Override
+    public boolean isFreeModule() {
+        return true;
+    }
+    @Override
     public void shutdown() {
         // Remove bundle resource
         BundleUtil.get().removeBundle(PIHistoryProvider.class);

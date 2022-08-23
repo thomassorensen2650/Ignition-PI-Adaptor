@@ -55,7 +55,6 @@ public class PIHistoryProviderSettings extends PersistentRecord {
         return getString(PITagPrefix);
     }
 
-
     public String getUsername() {
         return getString(Username);
     }
@@ -66,9 +65,6 @@ public class PIHistoryProviderSettings extends PersistentRecord {
     public boolean getVerifySSL() { return !getBoolean(IgnoreSSLIssues); }
 
     public boolean getOnlyBrowsePITagsWithPrefix() { return !getBoolean(OnlyBrowsePITagsWithPrefix); }
-
-
-
 
     public String getBrowsableAFServers()  { return getString(BrowsableAFServers); }
 

@@ -33,7 +33,6 @@ public class PIHistorySink implements DataSink {
         this.context = context;
         setSettings(settings);
         logger.debug("Started Sink with Pipeline: '" + pipelineName + "'");
-
     }
 
     public void setSettings(PIHistoryProviderSettings settings) {
@@ -96,7 +95,7 @@ public class PIHistorySink implements DataSink {
                 records.add((HistoricalTagValue)d);
             }
         }
-        piClient.getCustom().ingestRecords(settings, records);
+        piClient.getCustom().ingestRecords(records, settings.getPITagPrefix(), settings.getPIArchiver());
     }
 
     @Override

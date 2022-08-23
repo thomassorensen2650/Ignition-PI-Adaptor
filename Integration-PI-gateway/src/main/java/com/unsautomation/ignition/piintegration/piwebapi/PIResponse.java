@@ -1,7 +1,8 @@
-package com.unsautomation.ignition.piintegration.piwebapi.model;
+package com.unsautomation.ignition.piintegration.piwebapi;
 
 
 import com.inductiveautomation.ignition.common.gson.JsonElement;
+import com.inductiveautomation.ignition.common.gson.JsonObject;
 import com.inductiveautomation.ignition.common.gson.JsonParser;
 import com.inductiveautomation.ignition.common.gson.annotations.SerializedName;
 import com.unsautomation.ignition.piintegration.piwebapi.ApiException;
@@ -18,23 +19,19 @@ import java.util.stream.Collectors;
 
 public class PIResponse {
     @SerializedName("Status")
-    private Integer status = null;
+    private Integer status;
 
     @SerializedName("Headers")
-    private Map<String, String> headers = null;
+    private Map<String, String> headers;
 
     @SerializedName("Content")
-    private JsonElement content = null;
-
-    public PIResponse() {
-    }
+    private JsonObject content;
 
     public PIResponse(CloseableHttpResponse response) throws ApiException, IOException {
 
         var c = "";
         try {
-            c = EntityUtils.toString(
-                    response.getEntity(), StandardCharsets.UTF_8.name());
+            c = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8.name());
         } catch (EOFException ex) {
             content = null; // No respose body (common on POST requests)
         }
@@ -42,21 +39,24 @@ public class PIResponse {
         headers = Arrays.stream(response.getAllHeaders()).collect(Collectors
                 .toMap(k-> k.getName(), v -> v.getValue()));
 
-
         if (status > 299) {
             throw new ApiException(status, c);
         }
-        content = (new JsonParser()).parse(c);
+        content = (new JsonParser()).parse(c).getAsJsonObject();
     }
 
-    public void setStatus(Integer status) { this.status = status;}
+    public PIResponse(Integer status, JsonObject content) {
+        setStatus(status);
+        this.content = content;
+    }
+    private void setStatus(Integer status) { this.status = status;}
 
     public Integer getStatus() { return this.status;}
 
-    public void setHeaders(Map<String, String> headers) { this.headers = headers;}
+    private void setHeaders(Map<String, String> headers) { this.headers = headers;}
 
     public Map<String, String> getHeaders() { return this.headers;}
 
 
-    public JsonElement getContent() { return this.content;}
+    public JsonObject getContent() { return this.content;}
 }

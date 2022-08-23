@@ -5,7 +5,7 @@ import com.inductiveautomation.ignition.common.gson.JsonObject;
 import com.unsautomation.ignition.piintegration.piwebapi.ApiClient;
 import com.unsautomation.ignition.piintegration.piwebapi.ApiException;
 import com.unsautomation.ignition.piintegration.piwebapi.UrlUtils;
-import com.unsautomation.ignition.piintegration.piwebapi.model.PIResponse;
+import com.unsautomation.ignition.piintegration.piwebapi.PIResponse;
 import org.apache.http.client.HttpResponseException;
 
 import java.util.Date;
@@ -67,7 +67,7 @@ public class StreamApi {
      * @return
      * @throws ApiException
      */
-    public JsonArray getRecorded(String webId, Date startTime, Date endTime, String desiredUnits,  String selectedFields, String timeZone) throws ApiException {
+    public PIResponse getRecorded(String webId, Date startTime, Date endTime, String desiredUnits,  String selectedFields, String timeZone) throws ApiException {
 
         if (client.getSimulationMode()) {
             JsonObject obj = new JsonObject();
@@ -89,14 +89,12 @@ public class StreamApi {
                 items.add(item);
             }
             obj.add("Items", items);
-            return items; //resp.getData();
+            return new PIResponse(200, obj);
         }
         var queryPath = "?startTime=" + startTime.toInstant().toString() + "&endTime=" + endTime.toInstant().toString();
         var url = "streams/" + webId + "/recorded" + queryPath;
-        return client.doGet(url).getContent().getAsJsonObject().get("Items").getAsJsonArray();
+        return client.doGet(url);
     }
-
-    public void updateValue(String webId, JsonObject value) {}
 
     public PIResponse getSummary(String webId, Date startTime, Date endTime, String summaryType, String calculationBasis) throws ApiException {
 
@@ -107,15 +105,15 @@ public class StreamApi {
                 "summaryType", summaryType,
                 "calculationBasis",calculationBasis);
         url = UrlUtils.addUrlParameters(url, parameters);
-
-       /* var queryPath = "?startTime=" + startTime.toInstant().toString() + "&endTime=" + endTime.toInstant().toString() +
-                "&summaryType=" + summaryType + "&calculationBasis=" + calculationBasis;
-        queryPath = client.urlEncode(queryPath);
-
-        */
+        
         if (client.getSimulationMode()) {
             return null; // TODO;
         }
         return client.doGet(url);
+    }
+
+    public PIResponse updateValue(String webId, JsonObject value) throws ApiException {
+        var url = "streams/" + webId + "/value";
+        return client.doPost(url, value);
     }
 }

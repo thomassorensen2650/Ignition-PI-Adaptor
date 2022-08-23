@@ -3,7 +3,7 @@ package com.unsautomation.ignition.piintegration.piwebapi.api;
 import com.inductiveautomation.ignition.common.gson.JsonElement;
 import com.unsautomation.ignition.piintegration.piwebapi.ApiClient;
 import com.unsautomation.ignition.piintegration.piwebapi.ApiException;
-import com.unsautomation.ignition.piintegration.piwebapi.model.PIResponse;
+import com.unsautomation.ignition.piintegration.piwebapi.PIResponse;
 
 
 public class BatchApi {

@@ -5,7 +5,6 @@ import com.inductiveautomation.ignition.common.gson.JsonObject;
 import com.unsautomation.ignition.piintegration.piwebapi.ApiClient;
 import com.unsautomation.ignition.piintegration.piwebapi.ApiException;
 import com.unsautomation.ignition.piintegration.piwebapi.UrlUtils;
-import com.unsautomation.ignition.piintegration.piwebapi.model.PIResponse;
 
 public class ElementApi {
 

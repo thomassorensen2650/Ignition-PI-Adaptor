@@ -1,7 +1,6 @@
 package com.unsautomation.ignition.piintegration.piwebapi;
 
 import com.inductiveautomation.ignition.common.gson.JsonElement;
-import com.unsautomation.ignition.piintegration.piwebapi.model.PIResponse;
 import org.apache.http.auth.AuthenticationException;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.methods.HttpGet;
@@ -18,11 +17,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
-import java.net.URLEncoder;
-import java.util.Map;
 
 public class ApiClient {
     private final CloseableHttpClient httpClient;
@@ -47,6 +43,7 @@ public class ApiClient {
     }
 
     public Boolean getSimulationMode() {return true;}
+
     /***
      *
      * @param relativeUrl
@@ -54,7 +51,7 @@ public class ApiClient {
      * @return
      * @throws ApiException
      */
-     public PIResponse doPost(String relativeUrl, JsonElement requests) throws ApiException {
+    public PIResponse doPost(String relativeUrl, JsonElement requests) throws ApiException {
          var uri = URI.create(baseUrl  + relativeUrl);
          var request = new HttpPost(uri);
          logger.info("Posting: " + uri.toString());
@@ -82,7 +79,6 @@ public class ApiClient {
             throw new ApiException("Unable to POST", ex);
         }
     }
-
 
     /***
      *
