@@ -7,9 +7,13 @@ import java.time.Instant;
 
 public class PITagValue {
 
+    private long timeStamp;
     private JsonObject value;
     public PITagValue(JsonObject value) {
         this.value = value;
+        var time = value.get("Timestamp").getAsString();
+        var instant = Instant.parse(time);
+        timeStamp = instant.toEpochMilli();
     }
 
     public QualityCode getQuality() {
@@ -17,12 +21,10 @@ public class PITagValue {
     }
 
     public float getAsFloat() {
-        return value.getAsJsonObject().get("Value").getAsFloat();
+        return value.get("Value").getAsFloat();
     }
 
     public long getTimestamp() {
-        var time = value.get("Timestamp").getAsString();
-        var instant = Instant.parse(time);
-        return instant.toEpochMilli();
+        return this.timeStamp;
     }
 }

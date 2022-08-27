@@ -106,6 +106,8 @@ public class PIHistoryProvider implements TagHistoryProvider  {
 
     @Override
     public List<Aggregate> getAvailableAggregates() {
+
+        logger.info("Calling getAvailableAggregates");
         final var values = Arrays.stream(PIAggregates.values()).map(n -> n.getIgnitionAggregate()).collect(Collectors.toList());;
         return values;
     }
@@ -143,7 +145,7 @@ public class PIHistoryProvider implements TagHistoryProvider  {
             var name = item.getAsJsonObject().get("Name").getAsString();
             var tr = new TagResult();
 
-            // TODO: Find better solution.
+            // TODO: we need a better solution.
             name = name.replace("/", "\\");
 
             var p = basePath.replace(WellKnownPathTypes.Tag, tagPath + "/" + name);
@@ -179,10 +181,6 @@ public class PIHistoryProvider implements TagHistoryProvider  {
         return list;
     }
 
-    public GatewayContext getContext() {
-        return context;
-    }
-
     /**
      * Browses for tags available in PI. Returns a tree of tags. The function is called several times,
      * lazy loading, from a specific starting point.
@@ -190,49 +188,51 @@ public class PIHistoryProvider implements TagHistoryProvider  {
      */
     @Override
     public Results<Result> browse(QualifiedPath qualifiedPath, BrowseFilter browseFilter)  {
-        logger.info("browse(qualifiedPath, browseFilter) called.  qualifiedPath: " + qualifiedPath.toString()
-                + ", browseFilter: " + (browseFilter == null ? "null" : browseFilter.toString()));
+        if (logger.isDebugEnabled()) {
+            logger.debug("browse(qualifiedPath, browseFilter) called.  qualifiedPath: " + qualifiedPath.toString()
+                    + ", browseFilter: " + (browseFilter == null ? "null" : browseFilter.toString()));
+        }
 
         final var tagPath = qualifiedPath.getPathComponent(WellKnownPathTypes.Tag);
+        Results<Result> result;
+
         if (null == tagPath) {
             // Browse root
-            final var result = new Results<Result>();
+            result = new Results<>();
             final var list = createRootResults(qualifiedPath);
             result.setResults(list);
             result.setResultQuality(QualityCode.Good);
             return result;
-        }
-
-        final var result = new Results<Result>();
-        try {
-            final var cPoint = browseFilter != null ? browseFilter.getContinuationPoint() : null;
-            return browseInternal(qualifiedPath, cPoint);
-        } catch (Exception ex) {
-            logger.error("Unable to browse PI", ex);
-            result.setResultQuality(QualityCode.Bad_Failure);
+        } else {
+            try {
+                final var cPoint = browseFilter != null ? browseFilter.getContinuationPoint() : null;
+                result = browseInternal(qualifiedPath, cPoint);
+            } catch (Exception ex) {
+                logger.error("Unable to browse PI", ex);
+                result = new Results<>();
+                result.setResultQuality(QualityCode.Bad_Failure);
+            }
         }
         return result;
     }
 
     private Results<Result> browseInternal(QualifiedPath qualifiedPath,  String continuationPoint) throws ApiException, UnsupportedEncodingException {
         final int pagSize = 100;
+        final var result = new Results<Result>();
+        final var list = new ArrayList<Result>();
+        final var tagType = PIPathUtilities.findPathType(qualifiedPath);
+        var webId = "";
         Integer currentContinuationPoint = 0;
 
-        // TODO: Looks like Ignition does not support ContinuationPoint on browse
-        /*
+        // Looks like Ignition does not support ContinuationPoint on browse
+        // so this will handle data paging internally (need to test with large PI System)
         if (null != continuationPoint) {
             try {
                 currentContinuationPoint = Integer.parseInt(continuationPoint);
             }catch (Exception e) {
                 logger.error("Unable to parse continuationPoint :" + continuationPoint);
             }
-        }*/
-
-        final var result = new Results<Result>();
-        final var list = new ArrayList<Result>();
-
-        final var tagType = PIPathUtilities.findPathType(qualifiedPath);
-        var webId = "";
+        }
 
         if (!tagType.equals(PIObjectType.AssetsRoot) && !tagType.equals(PIObjectType.PointsRoot)) {
             webId = WebIdUtils.toWebID(qualifiedPath);
@@ -241,7 +241,7 @@ public class PIHistoryProvider implements TagHistoryProvider  {
 
         switch (tagType) {
             case AssetsRoot: // Top level Elements search
-                data = piClient.getAssetServer().list(null);
+                data = piClient.getAssetServer().list("Items.Name");
                 data = filterList(data, settings.getBrowsableAFServers());
                 list.addAll(createResults(qualifiedPath, data, true));
                 break;
@@ -272,6 +272,8 @@ public class PIHistoryProvider implements TagHistoryProvider  {
                 data = piClient.getDataServer().list("Items.Name");
                 data = filterList(data, settings.getBrowsablePIServers());
                 var r = createResults(qualifiedPath, data, true);
+
+                // There are no reason to show the user one PIServer node. if there are only one PI server, then return Points for that PI Server
                 if (r.size() == 1) {
                     logger.info("Browser AF Server only return one server.. browsing DBs");
                     return browseInternal(r.get(0).getPath(), continuationPoint);
@@ -280,10 +282,11 @@ public class PIHistoryProvider implements TagHistoryProvider  {
                 break;
             case PIServer:
                 // Search a PI Server for tags
-                var nameFilter = settings.getOnlyBrowsePITagsWithPrefix() ? settings.getPITagPrefix() : null;
+                var nameFilter = settings.getOnlyBrowsePITagsWithPrefix() ? settings.getPITagPrefix() + "*" : null;
                 var resp = piClient.getDataServer().getPoints(webId, nameFilter, currentContinuationPoint, pagSize,"Items.Name");
                 data = resp.get("Items").getAsJsonArray();
                 list.addAll(createResults(qualifiedPath, data, false));
+
                 break;
             default:
                 logger.error("Unable to parse Path " + qualifiedPath.toString());
@@ -293,12 +296,19 @@ public class PIHistoryProvider implements TagHistoryProvider  {
         result.setResults(list);
         result.setResultQuality(QualityCode.Good);
 
-        // TODO: This does not work
-        /*if (pagSize == data.size()) { // if the returned data size == pageSize, then there is a good change there are more data pages.
+        if (pagSize == data.size() && tagType == PIObjectType.PIServer) { // if the returned data size == pageSize, then there is a good change there are more data pages.
             currentContinuationPoint += pagSize;
-            result.setContinuationPoint(currentContinuationPoint.toString());
-            result.setTotalAvailableResults(currentContinuationPoint + pagSize); // TODO: Hack to ensure that Ignition will pull another dataPage
-        }*/
+            // TODO: This does not work
+            //result.setContinuationPoint(currentContinuationPoint.toString());
+            //result.setTotalAvailableResults(currentContinuationPoint + pagSize);
+
+            // Handle data paging internally until ContinuationPoint get implement in Browse method..
+            var d = browseInternal(qualifiedPath,currentContinuationPoint.toString());
+            if (logger.isDebugEnabled()) {
+                logger.debug("Browsing Continuation Point" + currentContinuationPoint);
+            }
+            list.addAll(d.getResults());
+        }
         return result;
     }
 

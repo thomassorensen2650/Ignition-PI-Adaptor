@@ -35,10 +35,10 @@ public class PIQueryExecutor  implements HistoryQueryExecutor {
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
     private final GatewayContext context;
-    private PIHistoryProviderSettings settings; // Holds the settings for the current provider, needed to connect to ADX
-    private QueryController controller; // Holds the settings for what the user wants to query
-    private List<ColumnQueryDefinition> paths; // Holds the definition of each tag
-    protected List<DelegatingHistoryNode> nodes = new ArrayList();
+    private final PIHistoryProviderSettings settings; // Holds the settings for the current provider, needed to connect to ADX
+    private final QueryController controller; // Holds the settings for what the user wants to query
+    private final List<ColumnQueryDefinition> paths; // Holds the definition of each tag
+    protected final List<DelegatingHistoryNode> nodes = new ArrayList();
     protected List<ProcessedHistoryColumn> tags;
     protected JsonArray queryResult;
 
@@ -118,7 +118,7 @@ public class PIQueryExecutor  implements HistoryQueryExecutor {
         logger.debug("startReading(blockSize, startDate, endDate) called.  blockSize: " + blockSize
                 + ", startDate: " + startDate.toString() + ", endDate: " + endDate.toString() + " pathSize:" + paths.size());
 
-        // TODO: Maybe this should be wrapped in PI BatchRequest to save PI server roundtrips?
+        // TODO: Should be wrapped in PI BatchRequest to save PI web api "server round trips" if more than one reading
         for (int i = 0; i < paths.size() ; i++) {
             var t = paths.get(i).getPath();
             var tagPath = t.getPathComponent(WellKnownPathTypes.Tag).toUpperCase();
@@ -130,18 +130,30 @@ public class PIQueryExecutor  implements HistoryQueryExecutor {
                     WebIdUtils.attributeToWebID(tagPath) :
                     WebIdUtils.toWebID(t);
             if (blockSize == 0) {
+                // TODO: Support data pagina
                 logger.debug("Fetching raw PI data");
                 var d =  piClient.getStream().getRecorded(t.toString(), startDate, endDate, null,null,null);
                 queryResult = d.getContent().getAsJsonArray("Items");
             } else  {
-                var function = PIAggregates.getPiAggregate(controller.getQueryParameters().getAggregationMode());
+                var function = controller.getQueryParameters().getAggregationMode();
                 logger.debug("Fetching data using Pi Aggregate " + function);
-                if ("Plot" == function) {
-                    var interval = (endDate.getTime() - startDate.getTime())/blockSize;
+                var interval = (endDate.getTime() - startDate.getTime())/blockSize;
+
+                if (function.equals(PIAggregates.PI_PLOT.getIgnitionAggregate())) {
                     queryResult = piClient.getStream().getPlot(webId, startDate, endDate, interval, null,null,null);
-                } else {
-                    var d = piClient.getStream().getSummary(webId, startDate, endDate, function, "TimeWeighted");
+                } else if (function.equals(PIAggregates.PI_INTERPOLATED.getIgnitionAggregate())) {
+                    var d = piClient.getStream().getInterpolated(webId, startDate, endDate, interval, null,null,null);
                     queryResult = d.getContent().getAsJsonArray("Items");
+                } else {
+                    var retrievalMode = PIAggregates.getPiAggregate(function);
+                    var d = piClient.getStream().getSummary(webId, startDate, endDate, retrievalMode, "TimeWeighted");
+                    var data = d.getContent().getAsJsonArray("Items");
+
+                    var returnData = new JsonArray();
+                    for (var value : data) {
+                        returnData.add(value.getAsJsonObject().getAsJsonObject("Value"));
+                    }
+                    queryResult = returnData;
                 }
             }
             for (var dv : queryResult) {
@@ -152,20 +164,6 @@ public class PIQueryExecutor  implements HistoryQueryExecutor {
 
                 var value = new PITagValue(dv.getAsJsonObject());
                 var ts = value.getTimestamp();
-                /*
-                var v = 0f;
-                var q = QualityCode.Good;
-                try {
-                    v = dv.getAsJsonObject().get("Value").getAsFloat();
-                } catch (Exception ex) {
-                    q = QualityCode.Bad;
-                }
-                
-                var time = dv.getAsJsonObject().get("Timestamp").getAsString();
-                var instant = Instant.parse (time);
-                var d = instant.toEpochMilli();
-
-                 */
                 var h = new ProcessedValue(value.getAsFloat(), value.getQuality(), ts,blockSize > 0);
                 tags.get(i).put(h);
 
@@ -176,6 +174,11 @@ public class PIQueryExecutor  implements HistoryQueryExecutor {
         }
     }
 
+    /***
+     * Currently not used... TODO: is this needed
+     * @param def
+     * @return
+     */
     protected HistoryNode buildRealNode(ColumnQueryDefinition def) {
         // TODO: What is the purpose of this function?? and why is it called from a delegate?
         var c = new ProcessedHistoryColumn(def.getColumnName(), true);

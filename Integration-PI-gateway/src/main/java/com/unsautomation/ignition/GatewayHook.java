@@ -2,6 +2,7 @@ package com.unsautomation.ignition;
 
 import com.inductiveautomation.ignition.common.BundleUtil;
 import com.inductiveautomation.ignition.common.licensing.LicenseState;
+import com.inductiveautomation.ignition.common.script.ScriptManager;
 import com.inductiveautomation.ignition.gateway.model.AbstractGatewayModuleHook;
 import com.inductiveautomation.ignition.gateway.model.GatewayContext;
 import com.unsautomation.ignition.piintegration.PIHistoryProvider;
@@ -10,6 +11,7 @@ import com.unsautomation.ignition.piintegration.PIHistoryProviderType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.script.ScriptContext;
 import java.sql.SQLException;
 
 public class GatewayHook extends AbstractGatewayModuleHook {
@@ -43,6 +45,11 @@ public class GatewayHook extends AbstractGatewayModuleHook {
 
     @Override
     public void startup(LicenseState licenseState) {
+    }
+
+    @Override
+    public void initializeScriptManager(ScriptManager manager) {
+        //TODO : Add Event Frame Functions
     }
 
     @Override

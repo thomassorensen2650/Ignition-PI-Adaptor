@@ -96,6 +96,41 @@ public class StreamApi {
         return client.doGet(url);
     }
 
+    /**
+     * Retrieves values over the specified time range suitable for plotting over the number of intervals (typically represents pixels).
+     */
+    public PIResponse getInterpolated(String webId, Date startTime, Date endTime, Long intervals, String desiredUnits, String selectedFields, String timeZone) throws ApiException, HttpResponseException {
+
+        if (client.getSimulationMode()) {
+            JsonObject obj = new JsonObject();
+            var items = new JsonArray();
+
+            var r = new Random();
+            var start = startTime.getTime();
+            var end = endTime.getTime();
+
+            var diff = end - start;
+            var valueOffset = diff / intervals;
+            var dt = startTime.toInstant();
+            for (int i = 0; i < intervals; i++) {
+                var item = new JsonObject();
+                item.addProperty("Timestamp", dt.toString());
+                item.addProperty("Good", true);
+                item.addProperty("Value", r.nextFloat()*100);
+                dt = dt.plusMillis(valueOffset);
+                items.add(item);
+            }
+            obj.add("Items", items);
+            return new PIResponse(200, obj);
+        }
+
+        var queryPath = "?startTime=" + startTime.toInstant().toString() + "&endTime=" + endTime.toInstant().toString()
+                + "&intervals=" + intervals;
+
+        var url = "streams/" + webId + "/interpolated" + queryPath;
+        return client.doGet(url);
+    }
+
     public PIResponse getSummary(String webId, Date startTime, Date endTime, String summaryType, String calculationBasis) throws ApiException {
 
         var url = "streams/" + webId + "/summary";

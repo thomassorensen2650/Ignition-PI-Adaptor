@@ -1,10 +1,12 @@
 package com.unsautomation.ignition.piintegration;
 
 import com.inductiveautomation.ignition.common.sqltags.history.Aggregate;
+import com.inductiveautomation.ignition.common.sqltags.history.AggregateInfo;
 import com.inductiveautomation.ignition.common.sqltags.history.AggregationMode;
 
 public enum PIAggregates implements Aggregate {
     PI_PLOT(AggregationMode.MinMax, "Plot"),
+    PI_INTERPOLATED(new AggregateInfo(Aggregate.CUSTOM_RESERVED_ID + 100, "Interpolated", "Interpolated Data"), "Interpolated"),
     PI_RANGE(AggregationMode.Range, "Range"),
     PI_AVERAGE(AggregationMode.SimpleAverage, "Average"),
     PI_STD_DEV(AggregationMode.StdDev, "StdDev"),
@@ -13,10 +15,10 @@ public enum PIAggregates implements Aggregate {
     PI_COUNT(AggregationMode.Count, "Count"),
     PI_PERCENT_GOOD(AggregationMode.PctGood, "PercentGood");
 
-    private AggregationMode ignitionAggregate;
-    private String piAggregate;
+    private final Aggregate ignitionAggregate;
+    private final String piAggregate;
 
-    PIAggregates(AggregationMode ignitionAggregate, String piAggregate) {
+    PIAggregates(Aggregate ignitionAggregate, String piAggregate) {
         this.ignitionAggregate = ignitionAggregate;
         this.piAggregate = piAggregate;
     }

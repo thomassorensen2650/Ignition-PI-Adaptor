@@ -34,6 +34,8 @@ public class PIHistoryProviderSettings extends PersistentRecord {
 
     public static final BooleanField IgnoreSSLIssues;
 
+    public static final IntField APIRequestPageSize;
+
     static final Category Connection;
     static final Category Advanced;
     static final Category Storage;
@@ -84,6 +86,11 @@ public class PIHistoryProviderSettings extends PersistentRecord {
 
         PIServer = new StringField(META, "piServer");
         PITagPrefix = new StringField(META, "piTagPrefix", SFieldFlags.SMANDATORY).setDefault("Ignition");
+
+        /**
+         * How many results returned in each request
+         */
+        APIRequestPageSize = new IntField(META, "apiRequestPageSize", SFieldFlags.SMANDATORY).setDefault(500);
 
         BrowsablePIServers = new StringField(META, "browsablePIServers");
         BrowsableAFServers = new StringField(META, "browsableAFServers");

@@ -23,8 +23,8 @@ import java.util.List;
 public class PIHistorySink implements DataSink {
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private PIHistoryProviderSettings settings; // Holds the settings for the current provider, needed to connect to ADX
-    private GatewayContext context;
-    private String pipelineName;
+    private final GatewayContext context;
+    private final String pipelineName;
     private PIWebApiClient piClient;
 
     public PIHistorySink(PIWebApiClient client, String pipelineName, GatewayContext context, PIHistoryProviderSettings settings) throws URISyntaxException {
@@ -86,7 +86,7 @@ public class PIHistorySink implements DataSink {
 
         // Find all the tags passed in that have data
         logger.debug("History set with '" + dataList.size() + "' row(s)");
-        for (HistoricalData d : dataList) {
+        for (var d : dataList) {
             if (d instanceof ScanclassHistorySet) {
                 ScanclassHistorySet dSet = (ScanclassHistorySet) d;
                 logger.debug("Scan class set '" + dSet.getSetName() + "' has '" + dSet.size() + "' tag(s)");

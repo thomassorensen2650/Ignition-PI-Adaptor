@@ -57,7 +57,7 @@ public class DataServerApi {
             var tagCount = startIndex == null || startIndex == 0 ? maxCount : maxCount -10;
             for (int i = 0; i < tagCount; i++) {
                 var first = new JsonObject();
-                first.addProperty("Name","Tag" + i);
+                first.addProperty("Name","Tag" + (i + startIndex + 1));
                 r.add(first);
             }
             obj.add("Items", r);
