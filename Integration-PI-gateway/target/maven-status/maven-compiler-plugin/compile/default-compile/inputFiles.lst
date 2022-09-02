@@ -23,4 +23,5 @@
 /Users/thomassorensen/Documents/Ignition-PI-Adaptor/Integration-PI-gateway/src/main/java/com/unsautomation/ignition/GatewayHook.java
 /Users/thomassorensen/Documents/Ignition-PI-Adaptor/Integration-PI-gateway/src/main/java/com/unsautomation/ignition/piintegration/PIPathUtilities.java
 /Users/thomassorensen/Documents/Ignition-PI-Adaptor/Integration-PI-gateway/src/main/java/com/unsautomation/ignition/piintegration/piwebapi/api/SearchApi.java
+/Users/thomassorensen/Documents/Ignition-PI-Adaptor/Integration-PI-gateway/src/main/java/com/unsautomation/ignition/piintegration/GatewayScriptModule.java
 /Users/thomassorensen/Documents/Ignition-PI-Adaptor/Integration-PI-gateway/src/main/java/com/unsautomation/ignition/piintegration/piwebapi/PIWebApiClient.java

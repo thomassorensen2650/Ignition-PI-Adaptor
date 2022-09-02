@@ -23,7 +23,6 @@ import com.unsautomation.ignition.piintegration.piwebapi.ApiException;
 import com.unsautomation.ignition.piintegration.piwebapi.PIObjectType;
 import com.unsautomation.ignition.piintegration.piwebapi.PIWebApiClient;
 import com.unsautomation.ignition.piintegration.piwebapi.WebIdUtils;
-import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,38 +40,40 @@ public class PIHistoryProvider implements TagHistoryProvider  {
 
     private final String name;
     private final GatewayContext context;
-    private PIHistoryProviderSettings settings;
+    private IPIHistoryProviderSettings settings;
     private PIHistorySink sink;
     private PIWebApiClient piClient;
 
-    public PIHistoryProvider(GatewayContext context, String name, @NotNull PIHistoryProviderSettings settings) throws URISyntaxException, ApiException {
+    public PIHistoryProvider(GatewayContext context, String name, IPIHistoryProviderSettings settings) throws URISyntaxException, ApiException {
         logger.debug("PIHistoryProvider CTOR");
         this.name = name;
         this.context = context;
         setSettings(settings);
 
-        // FIXME: Need to read up opn this stuff... Pretty crappy solution.
-        settings.META.addRecordListener(new RecordListenerAdapter<>() {
-            @Override
-            public void recordUpdated(PIHistoryProviderSettings record) {
-                //applyNewSettings(record);
-                logger.info("Configuration change detected... Updating module settings");
-                sink.setSettings(record);
-                try {
-                    setSettings(record);
-                } catch (ApiException e) {
-                    logger.error("Failed to update settings", e);
+        if (settings.getClass().isAssignableFrom(PIHistoryProviderSettings.class)) {
+            var s = (PIHistoryProviderSettings)settings;
+            s.META.addRecordListener(new RecordListenerAdapter<>() {
+                @Override
+                public void recordUpdated(PIHistoryProviderSettings record) {
+                    //applyNewSettings(record);
+                    logger.info("Configuration change detected... Updating module settings");
+                    sink.setSettings(record);
+                    try {
+                        setSettings(record);
+                    } catch (ApiException e) {
+                        logger.error("Failed to update settings", e);
+                    }
                 }
-            }
-        });
+            });
+        }
     }
 
     /***
-     * set settings and update
+     * update settings
      * @param settings
      * @throws ApiException
      */
-    public void setSettings(PIHistoryProviderSettings settings) throws ApiException {
+    public void setSettings(IPIHistoryProviderSettings settings) throws ApiException {
         this.settings = settings;
         piClient = new PIWebApiClient(settings.getWebAPIUrl(), settings.getUsername(), settings.getPassword(), settings.getVerifySSL(), false);
     }

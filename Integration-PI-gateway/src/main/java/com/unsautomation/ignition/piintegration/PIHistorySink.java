@@ -22,12 +22,12 @@ import java.util.List;
  */
 public class PIHistorySink implements DataSink {
     private final Logger logger = LoggerFactory.getLogger(getClass());
-    private PIHistoryProviderSettings settings; // Holds the settings for the current provider, needed to connect to ADX
+    private IPIHistoryProviderSettings settings; // Holds the settings for the current provider, needed to connect to ADX
     private final GatewayContext context;
     private final String pipelineName;
     private PIWebApiClient piClient;
 
-    public PIHistorySink(PIWebApiClient client, String pipelineName, GatewayContext context, PIHistoryProviderSettings settings) throws URISyntaxException {
+    public PIHistorySink(PIWebApiClient client, String pipelineName, GatewayContext context, IPIHistoryProviderSettings settings) throws URISyntaxException {
         this.piClient = client;
         this.pipelineName = pipelineName;
         this.context = context;
@@ -35,7 +35,7 @@ public class PIHistorySink implements DataSink {
         logger.debug("Started Sink with Pipeline: '" + pipelineName + "'");
     }
 
-    public void setSettings(PIHistoryProviderSettings settings) {
+    public void setSettings(IPIHistoryProviderSettings settings) {
         this.settings = settings;
     }
 
