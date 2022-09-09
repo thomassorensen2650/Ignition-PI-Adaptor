@@ -21,7 +21,7 @@ public class PointApi {
 
         if (client.getSimulationMode()) {
             var first = new JsonObject();
-            first.addProperty("webId","PI Tag");
+            first.addProperty("WebId","PI Tag");
             first.addProperty("name","PI Tag");
             return first;
         }

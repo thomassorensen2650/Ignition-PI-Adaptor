@@ -26,8 +26,10 @@ public class DataServerApi {
             var r = new JsonArray();
             var first = new JsonObject();
             first.addProperty("Name","First Server");
+            first.addProperty("WebId","xxDSENCODEDSERVER1");
             var second = new JsonObject();
             second.addProperty("Name", "Second Server");
+            second.addProperty("WebId","xxDSENCODEDSERVER2");
             r.add(first);
             r.add(second);
             return r;
@@ -58,6 +60,8 @@ public class DataServerApi {
             for (int i = 0; i < tagCount; i++) {
                 var first = new JsonObject();
                 first.addProperty("Name","Tag" + (i + startIndex + 1));
+                first.addProperty("WebId","xxDPWEBIDXXXTag" + (i + startIndex + 1));
+
                 r.add(first);
             }
             obj.add("Items", r);

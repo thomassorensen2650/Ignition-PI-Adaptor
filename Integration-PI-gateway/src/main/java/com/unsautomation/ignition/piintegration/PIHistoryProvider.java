@@ -50,6 +50,7 @@ public class PIHistoryProvider implements TagHistoryProvider  {
         this.context = context;
         setSettings(settings);
 
+        // Not sure if this is handled the correct way? But it enables me to unit test class without ignition running
         if (settings.getClass().isAssignableFrom(PIHistoryProviderSettings.class)) {
             var s = (PIHistoryProviderSettings)settings;
             s.META.addRecordListener(new RecordListenerAdapter<>() {
@@ -107,7 +108,6 @@ public class PIHistoryProvider implements TagHistoryProvider  {
 
     @Override
     public List<Aggregate> getAvailableAggregates() {
-
         logger.info("Calling getAvailableAggregates");
         final var values = Arrays.stream(PIAggregates.values()).map(n -> n.getIgnitionAggregate()).collect(Collectors.toList());;
         return values;
@@ -139,20 +139,42 @@ public class PIHistoryProvider implements TagHistoryProvider  {
         return null;
     }
 
-    private List<TagResult> createResults(QualifiedPath basePath, JsonArray items, boolean hasChildren) {
+    private List<TagResult> createResults(QualifiedPath basePath, JsonArray items, boolean hasChildren) throws Exception {
         var list = new ArrayList<TagResult>();
         var tagPath = basePath.getPathComponent(WellKnownPathTypes.Tag);
+
+        // Remove Web ID from DISPLAY   Path
+        // THIS IS ONLY FOR DISPLAY PATH
+        //var tagParts = tagPath.split("/");
+
+        // Remove WebID From Display Path
+        var regEx = "[//]([A-Za-z0-9\\s]+)\\|([A-Za-z0-9\\s]+)";
+        var displayPath = tagPath.replaceAll(regEx, "/$2");
+
         for (var item : items) {
-            var name = item.getAsJsonObject().get("Name").getAsString();
+            var tagName = item.getAsJsonObject().get("Name").getAsString().replace("/", "\\");
+            var webId = item.getAsJsonObject().get("WebId").getAsString();
             var tr = new TagResult();
 
+            var p = new QualifiedPath
+                    .Builder()
+                    .set(WellKnownPathTypes.HistoryProvider, basePath.getPathComponent(WellKnownPathTypes.HistoryProvider))
+                    .setTag(tagPath + "/" + webId + "|" + tagName)
+                    .build();
+            logger.info("p" + p.toString());
+            var pd = new QualifiedPath
+                    .Builder()
+                    .set(WellKnownPathTypes.HistoryProvider, basePath.getPathComponent(WellKnownPathTypes.HistoryProvider))
+                    .setTag(displayPath + "/" + tagName)
+                    .build();
+            logger.info("pd" + pd.toString());
+
             // TODO: we need a better solution.
-            name = name.replace("/", "\\");
-
-            var p = basePath.replace(WellKnownPathTypes.Tag, tagPath + "/" + name);
-
+            // Also filter other charaters that Ignition does not support (need to check documentation)
+            //var p = basePath.replace(WellKnownPathTypes.Tag, basePath + "/" + tagName);
             tr.setHasChildren(hasChildren);
             tr.setPath(p);
+            tr.setDisplayPath(pd);
             tr.setType(WellKnownPathTypes.Tag);
             list.add(tr);
         }
@@ -166,14 +188,26 @@ public class PIHistoryProvider implements TagHistoryProvider  {
         var list = new ArrayList<Result>();
 
         var assets = new TagResult();
-        var p = QualifiedPathUtils.toPathFromHistoricalString("[" + histProv + "]Assets");
+        //var p = QualifiedPathUtils.toPathFromHistoricalString("[" + histProv + "]Assets");
+
+        var p = new QualifiedPath
+                .Builder()
+                .set(WellKnownPathTypes.HistoryProvider, histProv)
+                .setTag("Assets")
+                .build();
         assets.setType(WellKnownPathTypes.Tag);
         assets.setHasChildren(true);
         assets.setPath(p);
         list.add(assets);
 
         var points = new TagResult();
-        var p2 = QualifiedPathUtils.toPathFromHistoricalString("[" + histProv + "]Points");
+        //var p2 = QualifiedPathUtils.toPathFromHistoricalString("[" + histProv + "]Points");
+        var p2 = new QualifiedPath
+                .Builder()
+                .set(WellKnownPathTypes.HistoryProvider, histProv)
+                .setTag("Points")
+                .build();
+
         points.setType(WellKnownPathTypes.Tag);
         points.setHasChildren(true);
         points.setPath(p2);
@@ -217,7 +251,7 @@ public class PIHistoryProvider implements TagHistoryProvider  {
         return result;
     }
 
-    private Results<Result> browseInternal(QualifiedPath qualifiedPath,  String continuationPoint) throws ApiException, UnsupportedEncodingException {
+    private Results<Result> browseInternal(QualifiedPath qualifiedPath,  String continuationPoint) throws Exception {
         final int pagSize = 100;
         final var result = new Results<Result>();
         final var list = new ArrayList<Result>();
@@ -235,9 +269,9 @@ public class PIHistoryProvider implements TagHistoryProvider  {
             }
         }
 
-        if (!tagType.equals(PIObjectType.AssetsRoot) && !tagType.equals(PIObjectType.PointsRoot)) {
+       /* if (!tagType.equals(PIObjectType.AssetsRoot) && !tagType.equals(PIObjectType.PointsRoot)) {
             webId = WebIdUtils.toWebID(qualifiedPath);
-        }
+        }*/
         var data = new JsonArray();
 
         switch (tagType) {
@@ -250,7 +284,7 @@ public class PIHistoryProvider implements TagHistoryProvider  {
                 data = piClient.getAssetDatabase().list(webId, "Items.Name");
                 var res = createResults(qualifiedPath, data, true);
 
-                // If there are only one server, then show DBs directly..
+                // If there are only one server, then show DBs directly.
                 if (res.size() == 1) {
                     logger.info("Browser AF Server only return one server.. browsing DBs");
                     return browseInternal(res.get(0).getPath(), continuationPoint);

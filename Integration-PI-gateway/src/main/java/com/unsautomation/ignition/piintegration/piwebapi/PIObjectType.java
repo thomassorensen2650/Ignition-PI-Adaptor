@@ -7,6 +7,8 @@ public enum PIObjectType {
     PIAFServer,
     PIAFDatabase,
     PIAFElement,
+    PIAFAttribute,
     AssetsRoot, // Top Level Assets
     PointsRoot // Top Level Points
+
 }

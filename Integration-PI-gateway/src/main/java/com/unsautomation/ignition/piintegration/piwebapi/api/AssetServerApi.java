@@ -5,6 +5,7 @@ import com.inductiveautomation.ignition.common.gson.JsonObject;
 import com.unsautomation.ignition.piintegration.piwebapi.ApiClient;
 import com.unsautomation.ignition.piintegration.piwebapi.ApiException;
 import com.unsautomation.ignition.piintegration.piwebapi.UrlUtils;
+import com.unsautomation.ignition.piintegration.piwebapi.WebIdUtils;
 import org.apache.http.client.HttpResponseException;
 
 public class AssetServerApi {
@@ -24,8 +25,11 @@ public class AssetServerApi {
             var r = new JsonArray();
             var first = new JsonObject();
             first.addProperty("Name", "First AF Server");
+
+            first.addProperty("WebId","xxRSENCODEDAFSERVER1");
             var second = new JsonObject();
             second.addProperty("Name", "Second AF Server");
+            second.addProperty("WebId","xxRSENCODEDAFSERVER2");
             r.add(first);
             r.add(second);
             return r;

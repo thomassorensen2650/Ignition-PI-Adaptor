@@ -25,8 +25,11 @@ public class AssetDatabaseApi {
             var r = new JsonArray();
             var first = new JsonObject();
             first.addProperty("Name", "First AF DB");
+            first.addProperty("WebId", "xxRDEncodedStuff");
             var second = new JsonObject();
             second.addProperty("Name", "Second AF DB");
+            second.addProperty("WebId", "xxRDEncodedStuff123");
+
             r.add(first);
             r.add(second);
             return r;
@@ -52,7 +55,7 @@ public class AssetDatabaseApi {
         if (client.getSimulationMode()) {
             var arr = new JsonArray();
             var first = new JsonObject();
-            first.addProperty("webId","Element");
+            first.addProperty("WebId","xxEmElementWebID");
             first.addProperty("Name","Element");
             arr.add(first);
             return arr;

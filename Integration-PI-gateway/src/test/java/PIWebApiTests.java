@@ -45,6 +45,10 @@ public class PIWebApiTests {
         var d1 = WebIdUtils.toWebID(test);
         var r1 = c.getElementApi().getElements(d1);
         System.out.print(r1);
+
+        var decoded = WebIdUtils.fromWebID(d1);
+        System.out.print(decoded);
+
         if (r1.size() < 1) {
             throw new Exception("AF Server not found");
         }

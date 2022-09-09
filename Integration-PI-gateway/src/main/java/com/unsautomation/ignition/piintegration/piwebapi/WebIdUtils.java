@@ -51,7 +51,7 @@ public class WebIdUtils {
             marker = "DS";
             ownerMarker = "";
         } else if (tagType.equals("POINTS") && tagParts.length == 3) {
-            // Encoding Asset DB
+            // Encoding Data Point
             ownerMarker = "";// "DS";
             marker = "DP";
         } else if (tagType.equals("POINTS")) {
@@ -75,6 +75,41 @@ public class WebIdUtils {
     public static String toWebID(QualifiedPath path) throws ApiException, UnsupportedEncodingException {
         var tagPath = path.getPathComponent(WellKnownPathTypes.Tag).toUpperCase();
         return toWebID(tagPath);
+    }
+
+    public PIObjectType getObjectType(String webId) throws Exception {
+        var value = webId.substring(2,2);
+
+        switch (value) {
+            case "RS": //Asset DB
+                return PIObjectType.PIAFServer;
+            case "RD":
+                return PIObjectType.PIAFDatabase;
+            case "Em":
+                return PIObjectType.PIAFElement;
+            case "DS":
+                return PIObjectType.PIServer;
+            case "DP":
+                return PIObjectType.PIPoint;
+            case "Ab":
+                return PIObjectType.PIAFAttribute;
+        }
+        throw new Exception("Unknown Type:" + value);
+
+    }
+    public static String fromWebID(String webId) {
+
+        var value = webId.substring(4);
+
+        value = trimStringByString(value, "=");
+        value = value.replace('-', '+').replace('_', '/');
+
+        return decode(value);
+    }
+
+    private static String decode(String webId) {
+        var bytes = Base64.getDecoder().decode(webId);
+        return new String(bytes);
     }
 
     public static String encode(String value) throws UnsupportedEncodingException {

@@ -26,10 +26,6 @@ public class PIWebApiClient {
         return new AssetDatabaseApi(apiClient);
     }
 
-    public SearchApi getSearch() {
-        return new SearchApi(apiClient);
-    }
-
     public DataServerApi getDataServer() {
         return new DataServerApi(apiClient);
     }
