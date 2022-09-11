@@ -44,35 +44,32 @@ public class PIHistoryProvider implements TagHistoryProvider  {
     private PIHistorySink sink;
     private PIWebApiClient piClient;
 
-    public PIHistoryProvider(GatewayContext context, String name, IPIHistoryProviderSettings settings) throws URISyntaxException, ApiException {
+    public PIHistoryProvider(GatewayContext context, String name, IPIHistoryProviderSettings settings) throws ApiException {
         logger.debug("PIHistoryProvider CTOR");
         this.name = name;
         this.context = context;
         setSettings(settings);
 
-        // Not sure if this is handled the correct way? But it enables me to unit test class without ignition running
-        if (settings.getClass().isAssignableFrom(PIHistoryProviderSettings.class)) {
-            var s = (PIHistoryProviderSettings)settings;
-            s.META.addRecordListener(new RecordListenerAdapter<>() {
-                @Override
-                public void recordUpdated(PIHistoryProviderSettings record) {
-                    //applyNewSettings(record);
-                    logger.info("Configuration change detected... Updating module settings");
-                    sink.setSettings(record);
-                    try {
-                        setSettings(record);
-                    } catch (ApiException e) {
-                        logger.error("Failed to update settings", e);
-                    }
+        // Not sure if this is handled the correct way? But it's a way for me to unit test class without ignition running
+        PIHistoryProviderSettings.META.addRecordListener(new RecordListenerAdapter<>() {
+            @Override
+            public void recordUpdated(PIHistoryProviderSettings record) {
+                //applyNewSettings(record);
+                logger.info("Configuration change detected... Updating module settings");
+                sink.setSettings(record);
+                try {
+                    setSettings(record);
+                } catch (ApiException e) {
+                    logger.error("Failed to update settings", e);
                 }
-            });
-        }
+            }
+        });
     }
 
     /***
      * update settings
-     * @param settings
-     * @throws ApiException
+     * @param settings Settings object.
+     * @throws ApiException API Exception
      */
     public void setSettings(IPIHistoryProviderSettings settings) throws ApiException {
         this.settings = settings;
@@ -109,7 +106,7 @@ public class PIHistoryProvider implements TagHistoryProvider  {
     @Override
     public List<Aggregate> getAvailableAggregates() {
         logger.info("Calling getAvailableAggregates");
-        final var values = Arrays.stream(PIAggregates.values()).map(n -> n.getIgnitionAggregate()).collect(Collectors.toList());;
+        final var values = Arrays.stream(PIAggregates.values()).map(PIAggregates::getIgnitionAggregate).collect(Collectors.toList());
         return values;
     }
 
@@ -139,39 +136,32 @@ public class PIHistoryProvider implements TagHistoryProvider  {
         return null;
     }
 
-    private List<TagResult> createResults(QualifiedPath basePath, JsonArray items, boolean hasChildren) throws Exception {
+    private List<TagResult> createResults(QualifiedPath basePath, JsonArray items, boolean hasChildren)  {
         var list = new ArrayList<TagResult>();
         var tagPath = basePath.getPathComponent(WellKnownPathTypes.Tag);
 
-        // Remove Web ID from DISPLAY   Path
-        // THIS IS ONLY FOR DISPLAY PATH
-        //var tagParts = tagPath.split("/");
-
-        // Remove WebID From Display Path
-        var regEx = "[//]([A-Za-z0-9\\s]+)\\|([A-Za-z0-9\\s]+)";
+        // Build a DisplayPath without WebID
+        var regEx = "/([A-Za-z0-9\\s]+)\\|([A-Za-z0-9\\s]+)";
         var displayPath = tagPath.replaceAll(regEx, "/$2");
 
         for (var item : items) {
             var tagName = item.getAsJsonObject().get("Name").getAsString().replace("/", "\\");
             var webId = item.getAsJsonObject().get("WebId").getAsString();
+            var histProvider = basePath.getPathComponent(WellKnownPathTypes.HistoryProvider);
             var tr = new TagResult();
 
-            var p = new QualifiedPath
-                    .Builder()
-                    .set(WellKnownPathTypes.HistoryProvider, basePath.getPathComponent(WellKnownPathTypes.HistoryProvider))
+            var p = new QualifiedPath.Builder()
+                    .set(WellKnownPathTypes.HistoryProvider, histProvider)
                     .setTag(tagPath + "/" + webId + "|" + tagName)
                     .build();
-            logger.info("p" + p.toString());
-            var pd = new QualifiedPath
-                    .Builder()
-                    .set(WellKnownPathTypes.HistoryProvider, basePath.getPathComponent(WellKnownPathTypes.HistoryProvider))
+            logger.info("Path: " + p.toString());
+
+            var pd = new QualifiedPath.Builder()
+                    .set(WellKnownPathTypes.HistoryProvider, histProvider)
                     .setTag(displayPath + "/" + tagName)
                     .build();
-            logger.info("pd" + pd.toString());
+            logger.info("Display Path : " + pd.toString());
 
-            // TODO: we need a better solution.
-            // Also filter other charaters that Ignition does not support (need to check documentation)
-            //var p = basePath.replace(WellKnownPathTypes.Tag, basePath + "/" + tagName);
             tr.setHasChildren(hasChildren);
             tr.setPath(p);
             tr.setDisplayPath(pd);
@@ -219,7 +209,7 @@ public class PIHistoryProvider implements TagHistoryProvider  {
     /**
      * Browses for tags available in PI. Returns a tree of tags. The function is called several times,
      * lazy loading, from a specific starting point.
-     * @return
+     * @return Browse Results
      */
     @Override
     public Results<Result> browse(QualifiedPath qualifiedPath, BrowseFilter browseFilter)  {
@@ -257,7 +247,7 @@ public class PIHistoryProvider implements TagHistoryProvider  {
         final var list = new ArrayList<Result>();
         final var tagType = PIPathUtilities.findPathType(qualifiedPath);
         var webId = "";
-        Integer currentContinuationPoint = 0;
+        int currentContinuationPoint = 0;
 
         // Looks like Ignition does not support ContinuationPoint on browse
         // so this will handle data paging internally (need to test with large PI System)
@@ -269,9 +259,6 @@ public class PIHistoryProvider implements TagHistoryProvider  {
             }
         }
 
-       /* if (!tagType.equals(PIObjectType.AssetsRoot) && !tagType.equals(PIObjectType.PointsRoot)) {
-            webId = WebIdUtils.toWebID(qualifiedPath);
-        }*/
         var data = new JsonArray();
 
         switch (tagType) {
@@ -321,10 +308,9 @@ public class PIHistoryProvider implements TagHistoryProvider  {
                 var resp = piClient.getDataServer().getPoints(webId, nameFilter, currentContinuationPoint, pagSize,"Items.Name");
                 data = resp.get("Items").getAsJsonArray();
                 list.addAll(createResults(qualifiedPath, data, false));
-
                 break;
             default:
-                logger.error("Unable to parse Path " + qualifiedPath.toString());
+                logger.error("Unable to parse Path " + qualifiedPath);
                 result.setResultQuality(QualityCode.Bad_Failure);
                 return result;
         }
@@ -337,8 +323,12 @@ public class PIHistoryProvider implements TagHistoryProvider  {
             //result.setContinuationPoint(currentContinuationPoint.toString());
             //result.setTotalAvailableResults(currentContinuationPoint + pagSize);
 
+            if (currentContinuationPoint > 1000000) {
+                throw new Exception("API Limit of 1M results reached. Aborting...");
+            }
+
             // Handle data paging internally until ContinuationPoint get implement in Browse method..
-            var d = browseInternal(qualifiedPath,currentContinuationPoint.toString());
+            var d = browseInternal(qualifiedPath, Integer.toString(currentContinuationPoint));
             if (logger.isDebugEnabled()) {
                 logger.debug("Browsing Continuation Point" + currentContinuationPoint);
             }
@@ -348,7 +338,7 @@ public class PIHistoryProvider implements TagHistoryProvider  {
     }
 
     private JsonArray filterList(JsonArray list, String filter) {
-        if (null == filter || "" == filter) {
+        if (null == filter || filter.equals("")) {
             return list;
         }
         final var filterNames = Arrays.asList(filter.toUpperCase().split(","));
@@ -385,8 +375,7 @@ public class PIHistoryProvider implements TagHistoryProvider  {
         var t = new Timeline();
         t.add(startDate.getTime(), endDate.getTime(), value);
         timelines.add(t);
-        var timelineSet = new TimelineSet(timelines);
-        return timelineSet;
+        return new TimelineSet(timelines);
     }
 
     /*
