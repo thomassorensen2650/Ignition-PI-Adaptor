@@ -16,7 +16,7 @@ import java.util.List;
 
 public class CustomApi {
     private final HashMap<String, String> tagCache = new HashMap<>();
-    private final HashMap<String, String> dataserverCache = new HashMap<>();
+    //private final HashMap<String, String> dataserverCache = new HashMap<>();
     private final StreamApi stream;
     private final DataServerApi dataserver;
     private final SystemApi system;
@@ -66,8 +66,7 @@ public class CustomApi {
         if (tagCache.containsKey(path)) {
             return tagCache.get(path);
         }
-
-
+        
         String tagWebId = null;
         try {
             var tag = this.point.getByPath(path);
@@ -81,51 +80,32 @@ public class CustomApi {
                 x.addProperty("Name", tag);
                 x.addProperty("PointType", "Float32");
                 x.addProperty("PointClass", "Classic");
-
-
+                
                 var archiverWebId = this.dataserver.getByPath("\\\\" + archiver).getAsJsonObject().get("WebId").getAsString();
-
                 tagWebId = this.dataserver.createPoint(archiverWebId, x);
             } else {
                 throw ex;
             }
         }
-
-
-        // Ignore NotFound Exception, as we want it fail if not found
-        //var archiver = dataserver.getByPath(dataServer);
-        // var arc = archiver.getAsJsonArray("Items").get(0);
-        //var webId = arc.getAsJsonObject().get("WebId").getAsString();
-
-        // Tag not qualified
-        //JsonArray tags = null;
-        //tags = dataserver.getPoints(webId, tagName, 0, 1, null);
-
-        //String tagWebId = null;
-        //if (tags.size() == 0) {
-        //    tagWebId = dataserver.createPoint(point);
-        //}else {
-        //    tagWebId = tags.get(0).getAsJsonObject().get("WebId").getAsString();
-        //}
-
         tagCache.put(path, tagWebId);
         return tagWebId;
     }
 
     public boolean isAvailable() {
         try {
-            return system.getStatus().get("State").getAsString() == "Running";
+            return true;
+            //return system.getStatus().get("State").getAsString() == "Running";
         }catch (Exception e){
             return false;
         }
     }
 
-    public Float getDensity(String dataServer, String tagName, Date startTime, Date endTime) {
+   /* public Float getDensity(String dataServer, String tagName, Date startTime, Date endTime) {
 
         //var archiver = dataserver.getByPath(dataServer);
         //var webId = archiver.get("WebId").getAsString();
 
        // stream.getGetSummary(webId, )
         return 0.5f;
-    }
+    }*/
 }

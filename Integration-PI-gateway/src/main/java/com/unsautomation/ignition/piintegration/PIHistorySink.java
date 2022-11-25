@@ -87,12 +87,21 @@ public class PIHistorySink implements DataSink {
         // Find all the tags passed in that have data
         logger.debug("History set with '" + dataList.size() + "' row(s)");
         for (var d : dataList) {
+
             if (d instanceof ScanclassHistorySet) {
                 ScanclassHistorySet dSet = (ScanclassHistorySet) d;
                 logger.debug("Scan class set '" + dSet.getSetName() + "' has '" + dSet.size() + "' tag(s)");
                 records.addAll(dSet);
             } else if (d instanceof HistoricalTagValue) {
                 records.add((HistoricalTagValue)d);
+            }
+        }
+
+        for (var r : records) {
+            var tagName = r.getSource().toStringPartial();
+            var validPiTag = tagName.matches("^[A-Za-z0-9_%][^*'?;{}\\[\\]|\\`]*$");
+            if (!validPiTag) {
+                // FIXME: Need to support Ignition tags which are not valid PI tags
             }
         }
         piClient.getCustom().ingestRecords(records, settings.getPITagPrefix(), settings.getPIArchiver());

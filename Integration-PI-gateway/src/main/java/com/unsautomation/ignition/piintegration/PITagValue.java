@@ -1,6 +1,8 @@
 package com.unsautomation.ignition.piintegration;
 
 import com.inductiveautomation.ignition.common.gson.JsonObject;
+import com.inductiveautomation.ignition.common.gson.JsonParser;
+import com.inductiveautomation.ignition.common.gson.JsonSyntaxException;
 import com.inductiveautomation.ignition.common.model.values.QualityCode;
 
 import java.time.Instant;
@@ -17,7 +19,7 @@ public class PITagValue {
     }
 
     public QualityCode getQuality() {
-        return QualityCode.Good; // TODO: Convert PI Quality to Ignition Quality
+        return value.get("Good").getAsBoolean() ? QualityCode.Good : QualityCode.Bad;
     }
 
     public float getAsFloat() {
@@ -26,5 +28,25 @@ public class PITagValue {
 
     public long getTimestamp() {
         return this.timeStamp;
+    }
+
+    public Object getValue() {
+        return isSystemValue() ? null : value.get("Value").getAsFloat(); }
+
+    public Boolean isSystemValue() {
+
+        if (value.get("Good").getAsBoolean() == true) {
+            return false;
+        }
+
+        // If the value is not good, then we need to investigate some more
+        // TODO: Will it always be a system value when bad?
+        try {
+            (new JsonParser()).parse(value.get("Value").getAsString());
+            return true;
+        } catch (JsonSyntaxException e) {
+            return false;
+        }
+
     }
 }

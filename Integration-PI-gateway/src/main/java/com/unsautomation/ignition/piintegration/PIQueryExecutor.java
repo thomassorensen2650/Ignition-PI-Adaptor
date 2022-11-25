@@ -164,7 +164,9 @@ public class PIQueryExecutor  implements HistoryQueryExecutor {
 
                 var value = new PITagValue(dv.getAsJsonObject());
                 var ts = value.getTimestamp();
-                var h = new ProcessedValue(value.getAsFloat(), value.getQuality(), ts,blockSize > 0);
+                // FIXME: Float?
+
+                var h = new ProcessedValue(value.getValue(), value.getQuality(), ts,blockSize > 0);
                 tags.get(i).put(h);
 
                 if (ts > this.maxTSInData) {
@@ -200,7 +202,7 @@ public class PIQueryExecutor  implements HistoryQueryExecutor {
      * Called after we have no more data to read. Process data if needed.
      */
     @Override
-    public long processData() throws Exception {
+    public long processData() {
         processed = true;
         return maxTSInData;
     }

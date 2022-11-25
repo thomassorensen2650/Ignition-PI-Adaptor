@@ -7,6 +7,7 @@ import com.unsautomation.ignition.piintegration.piwebapi.ApiClient;
 import com.unsautomation.ignition.piintegration.piwebapi.ApiException;
 import com.unsautomation.ignition.piintegration.piwebapi.UrlUtils;
 import org.apache.http.client.HttpResponseException;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Map;
 
@@ -49,7 +50,7 @@ public class DataServerApi {
         return client.doGet(url).getContent().getAsJsonObject();
     }
 
-    public JsonObject getPoints(String dataServerWebId, String nameFilter, Integer startIndex, Integer maxCount, String selectedFields) throws ApiException{
+    public JsonObject getPoints(String dataServerWebId, @NotNull String nameFilter, Integer startIndex, Integer maxCount, @NotNull String selectedFields) throws ApiException{
 
         if (client.getSimulationMode()) {
             var obj = new JsonObject();

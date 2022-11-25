@@ -66,7 +66,7 @@ public class PIHistoryProviderSettings extends PersistentRecord implements IPIHi
     }
     public boolean getVerifySSL() { return !getBoolean(IgnoreSSLIssues); }
 
-    public boolean getOnlyBrowsePITagsWithPrefix() { return !getBoolean(OnlyBrowsePITagsWithPrefix); }
+    public boolean getOnlyBrowsePITagsWithPrefix() { return getBoolean(OnlyBrowsePITagsWithPrefix); }
 
     public String getBrowsableAFServers()  { return getString(BrowsableAFServers); }
 
