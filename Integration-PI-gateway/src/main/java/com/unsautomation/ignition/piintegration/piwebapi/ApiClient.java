@@ -27,11 +27,13 @@ public class ApiClient {
     private String baseUrl;
     private Boolean verifySSL;
 
+    private Boolean simulationMode;
+
     private final Logger logger = LoggerFactory.getLogger("PIWebApiClient");
 
-    public ApiClient(String baseUrl, String username, String password, Boolean verifySsl) throws ApiException {
+    public ApiClient(String baseUrl, String username, String password, Boolean verifySsl, Boolean simulationMode) throws ApiException {
         this.verifySSL = verifySsl;
-
+        this.simulationMode = simulationMode;
         this.baseUrl = baseUrl;
         if (!this.baseUrl.endsWith("/")) {
             this.baseUrl+= "/";
@@ -42,7 +44,7 @@ public class ApiClient {
         this.password = password;
     }
 
-    public Boolean getSimulationMode() {return true;}
+    public Boolean getSimulationMode() { return simulationMode; }
 
     /***
      *

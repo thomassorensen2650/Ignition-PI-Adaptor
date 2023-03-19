@@ -8,10 +8,10 @@ public class PIWebApiClient {
     private String baseUrl = null;
     private Boolean cacheDisabled = null;
 
-    public PIWebApiClient(String baseUrl, String username, String password, Boolean verifySsl, Boolean debug) throws ApiException {
+    public PIWebApiClient(String baseUrl, String username, String password, Boolean verifySsl, Boolean debug, Boolean simulationMode) throws ApiException {
         this.baseUrl = baseUrl;
         this.cacheDisabled = true;
-        this.apiClient = new ApiClient(baseUrl, username, password, verifySsl);
+        this.apiClient = new ApiClient(baseUrl, username, password, verifySsl, simulationMode);
     }
 
     public BatchApi getBatch() {

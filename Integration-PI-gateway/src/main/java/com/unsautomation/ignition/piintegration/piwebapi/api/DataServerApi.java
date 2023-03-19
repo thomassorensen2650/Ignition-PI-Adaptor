@@ -65,12 +65,18 @@ public class DataServerApi {
 
                 r.add(first);
             }
+
+            var a = new JsonObject();
+            a.addProperty("Name","Tag//asdasd");
+            a.addProperty("WebId","xxDPWEBIDXXXT");
+            r.add(a);
+
             obj.add("Items", r);
             return obj;
         }
         var url = String.format("dataservers/%s/points?", dataServerWebId);
 
-        var parameters = Map.of(
+        final var parameters = Map.of(
                 "nameFilter",nameFilter,
                 "startIndex", startIndex,
                 "maxCount", maxCount,

@@ -11,7 +11,7 @@ import simpleorm.dataset.SFieldMeta;
  * A user will fill in all of these fields. The data is stored inside of
  * Ignition's internal sqlite database into the table specified below.
  */
-public class PIHistoryProviderSettings extends PersistentRecord implements IPIHistoryProviderSettings{
+public class PIHistoryProviderSettings extends PersistentRecord{
     public static final RecordMeta<PIHistoryProviderSettings> META = new RecordMeta<PIHistoryProviderSettings>(
             PIHistoryProviderSettings.class, "PIHistoryProviderSettings");
 
@@ -35,6 +35,8 @@ public class PIHistoryProviderSettings extends PersistentRecord implements IPIHi
     public static final BooleanField IgnoreSSLIssues;
 
     public static final IntField APIRequestPageSize;
+
+    public static final BooleanField SimulationMode;
 
     static final Category Connection;
     static final Category Advanced;
@@ -72,6 +74,13 @@ public class PIHistoryProviderSettings extends PersistentRecord implements IPIHi
 
     public String getBrowsablePIServers()  { return getString(BrowsablePIServers); }
 
+    public Integer getAPIRequestPageSize() {
+        return getInt(APIRequestPageSize);
+    }
+    public Integer getAPIMaxResponseLimit() { return 1000000; }
+
+    public Boolean getSimulationMode() { return getBoolean(SimulationMode); }
+
     static {
         ProfileId = new LongField(META, "ProfileId", SFieldFlags.SPRIMARY_KEY);
         Profile  = new ReferenceField<TagHistoryProviderRecord>(META, TagHistoryProviderRecord.META, "Profile", ProfileId);
@@ -81,6 +90,7 @@ public class PIHistoryProviderSettings extends PersistentRecord implements IPIHi
         PIWebAPIUrl  = new StringField(META, "piWebAPIUrl", SFieldFlags.SMANDATORY).setDefault("https://localhost/piwebapi");
         Username  = new StringField(META, "userName");
         Password  = new EncodedStringField(META, "password");
+        SimulationMode = new BooleanField(META, "simulationMode");
         Password.getFormMeta().setEditorSource(PasswordEditorSource.getSharedInstance());
 
 
@@ -101,7 +111,7 @@ public class PIHistoryProviderSettings extends PersistentRecord implements IPIHi
 
         Connection = (new Category("PIHistoryProviderSettings.Category.Connection", 1, false)).include(new SFieldMeta[]{PIWebAPIUrl, Username, Password});
         Storage = (new Category("PIHistoryProviderSettings.Category.Storage", 2, false)).include(new SFieldMeta[]{PIServer, PITagPrefix});
-        Advanced = (new Category("PIHistoryProviderSettings.Category.Advanced", 3, true)).include(new SFieldMeta[]{BrowsablePIServers, BrowsableAFServers, OnlyBrowsePITagsWithPrefix, IgnoreSSLIssues});
+        Advanced = (new Category("PIHistoryProviderSettings.Category.Advanced", 3, true)).include(new SFieldMeta[]{BrowsablePIServers, BrowsableAFServers, OnlyBrowsePITagsWithPrefix, IgnoreSSLIssues, SimulationMode});
     }
 
     @Override

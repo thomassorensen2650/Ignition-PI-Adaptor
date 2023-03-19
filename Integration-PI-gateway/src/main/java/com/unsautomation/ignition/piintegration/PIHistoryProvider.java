@@ -39,14 +39,18 @@ public class PIHistoryProvider implements TagHistoryProvider  {
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private final String name;
     private final GatewayContext context;
-    private IPIHistoryProviderSettings settings;
+    private PIHistoryProviderSettings settings;
     private PIHistorySink sink;
     private PIWebApiClient piClient;
 
-    public PIHistoryProvider(GatewayContext context, String name, IPIHistoryProviderSettings settings) throws ApiException {
+    int pagSize = 1000;
+    int maxResultSize = 1000000;
+
+    public PIHistoryProvider(GatewayContext context, String name, PIHistoryProviderSettings settings) throws ApiException {
         logger.debug("PIHistoryProvider CTOR");
         this.name = name;
         this.context = context;
+
         setSettings(settings);
         PIHistoryProviderSettings.META.addRecordListener(new RecordListenerAdapter<>() {
             @Override
@@ -67,9 +71,11 @@ public class PIHistoryProvider implements TagHistoryProvider  {
      * @param settings Settings object.
      * @throws ApiException API Exception
      */
-    public void setSettings(IPIHistoryProviderSettings settings) throws ApiException {
+    public void setSettings(PIHistoryProviderSettings settings) throws ApiException {
         this.settings = settings;
-        piClient = new PIWebApiClient(settings.getWebAPIUrl(), settings.getUsername(), settings.getPassword(), settings.getVerifySSL(), false);
+        this.maxResultSize = settings.getAPIMaxResponseLimit();
+        this.pagSize = settings.getAPIRequestPageSize();
+        piClient = new PIWebApiClient(settings.getWebAPIUrl(), settings.getUsername(), settings.getPassword(), settings.getVerifySSL(), false, settings.getSimulationMode());
     }
 
     @Override
@@ -122,7 +128,7 @@ public class PIHistoryProvider implements TagHistoryProvider  {
 
     @Override
     public PIQueryExecutor createQuery(List<ColumnQueryDefinition> tags, QueryController queryController) {
-        logger.info("createQuery(tags, queryController) called.  tags: " + tags.toString()
+        logger.debug("createQuery(tags, queryController) called.  tags: " + tags.toString()
                 + ", queryController: " + queryController.toString());
         try {
             return new PIQueryExecutor(piClient, context, settings, tags, queryController);
@@ -133,43 +139,38 @@ public class PIHistoryProvider implements TagHistoryProvider  {
     }
 
     private List<TagResult> createResults(QualifiedPath basePath, JsonArray items, boolean hasChildren)  {
-        var list = new ArrayList<TagResult>();
-        var tagPath = basePath.getPathComponent(WellKnownPathTypes.Tag);
+        final var list = new ArrayList<TagResult>();
+        final var tagPath = basePath.getPathComponent(WellKnownPathTypes.Tag);
+        final var histProvider = basePath.getPathComponent(WellKnownPathTypes.HistoryProvider);
 
         for (var item : items) {
-            final var tagName = item.getAsJsonObject().get("Name").getAsString(); //.replace('/', ':');
-            final var validIgnName = tagName.matches("^[\\p{L}\\d][\\p{L}\\d_'-:()\\s]*$");
+            // If this is a PI Point on AF Attribute, then we can clean up illegal charaters
+            // Display Path should be cleanName
+            // Path should we WebID
+            // TODO: Find a better solution, need to dig a bit deeper into the Igniton SDK.
+            var tagName = item.getAsJsonObject().get("Name").getAsString(); //
+            var displayName = hasChildren ? tagName : tagName.replaceAll("[^A-Za-z0-9\\.\\_\\'\\-\\:\\(\\)]", ":");
+            final var name = hasChildren ? displayName : item.getAsJsonObject().get("WebId").getAsString();
+            final var validIgnName = displayName.matches("^[\\p{L}\\d][\\p{L}\\d_'-:()\\s]*$");
 
             if (validIgnName) {
-                var histProvider = basePath.getPathComponent(WellKnownPathTypes.HistoryProvider);
                 var tr = new TagResult();
-
                 var p = new QualifiedPath.Builder()
                         .set(WellKnownPathTypes.HistoryProvider, histProvider)
-                        .setTag(tagPath + "/" + tagName) // + "|" + tagName
-                        .build();
-                logger.info("Path: " + p.toString());
+                        .setTag(tagPath + "/" + name).build();
+
+                logger.debug("Path: " + p.toString());
                 tr.setHasChildren(hasChildren);
                 tr.setPath(p);
-
+                var dp = new QualifiedPath.Builder()
+                            .set(WellKnownPathTypes.HistoryProvider, histProvider)
+                            .setTag(tagPath + "/" + displayName).build();
+                tr.setDisplayPath(dp);
                 tr.setType(WellKnownPathTypes.Tag);
+                logger.info("DisplayPath: " + dp.toString());
                 list.add(tr);
             } else {
-                logger.warn("PI Tag '%s' is not a valid Ignition tag name.. unable to show", tagName);
-                // TODO: Find a solution... Replace invalid characters with something and encode PI web ID ??
-                /*var webId = item.getAsJsonObject().get("WebId").getAsString();
-                 var pd = new QualifiedPath.Builder()
-                    .set(WellKnownPathTypes.HistoryProvider, histProvider)
-                    .setTag(displayPath + "/" + tagName)
-                    .build();
-                logger.info("Display Path : " + pd.toString());
-
-                    tr.setDisplayPath(pd);
-
-                     Build a DisplayPath without WebID
-                    var displayPath = tagPath.replaceAll("/([A-Za-z0-9\\s]+)\\|([A-Za-z0-9\\s]+)", "/$2");
-
-                */
+                logger.warn("PI Tag '{}' is not a valid Ignition tag name.. unable to use", new Object[] { tagName });
             }
         }
         return list;
@@ -241,8 +242,6 @@ public class PIHistoryProvider implements TagHistoryProvider  {
     }
 
     private Results<Result> browseInternal(QualifiedPath qualifiedPath,  String continuationPoint) throws Exception {
-        final int pagSize = 1000;
-        final int maxResultSize = 1000000;
         final var result = new Results<Result>();
         final var list = new ArrayList<Result>();
         final var tagType = PIPathUtilities.findPathType(qualifiedPath);
@@ -258,7 +257,7 @@ public class PIHistoryProvider implements TagHistoryProvider  {
         if (null != continuationPoint) {
             try {
                 currentContinuationPoint = Integer.parseInt(continuationPoint);
-            }catch (Exception e) {
+            } catch (Exception e) {
                 logger.error("Unable to parse continuationPoint :" + continuationPoint);
             }
         }
@@ -309,7 +308,7 @@ public class PIHistoryProvider implements TagHistoryProvider  {
             case PIServer:
                 // Search a PI Server for tags
                 var nameFilter = settings.getOnlyBrowsePITagsWithPrefix() ? settings.getPITagPrefix() + "*" : "*";
-                var resp = piClient.getDataServer().getPoints(webId, nameFilter, currentContinuationPoint, pagSize,"Items.Name");
+                var resp = piClient.getDataServer().getPoints(webId, nameFilter, currentContinuationPoint, pagSize,"Items.Name;Items.WebId");
                 data = resp.get("Items").getAsJsonArray();
                 list.addAll(createResults(qualifiedPath, data, false));
                 break;
@@ -319,9 +318,12 @@ public class PIHistoryProvider implements TagHistoryProvider  {
                 return result;
         }
 
-        if (pagSize == data.size() && tagType == PIObjectType.PIServer) { // if the returned data size == pageSize, then there is a good change there are more data pages.
+        // if the returned data size == pageSize, then there is a good change there are more data pages.
+        // We only support paging for PI Tags, and a AF Structure with 1000+ elements in one level would be pretty bad.
+        if (pagSize == data.size() && tagType == PIObjectType.PIServer) {
             currentContinuationPoint += pagSize;
-            // TODO: This does not work.. Not implemented in Ignition?
+            // TODO: This does not work..
+            //  Not implemented in Ignition?
             //result.setContinuationPoint(currentContinuationPoint.toString());
             //result.setTotalAvailableResults(currentContinuationPoint + pagSize);
 

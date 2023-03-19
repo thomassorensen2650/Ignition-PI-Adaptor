@@ -15,7 +15,7 @@ public class PIWebApiTests {
     PIWebApiClient c;
 
     public PIWebApiTests() throws ApiException {
-        c = new PIWebApiClient("https://192.168.1.213/piwebapi/", "t", "t", false, true);
+        c = new PIWebApiClient("https://192.168.1.213/piwebapi/", "t", "t", false, true, true);
     }
 
     @Test

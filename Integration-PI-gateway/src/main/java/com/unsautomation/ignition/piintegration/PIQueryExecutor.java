@@ -35,7 +35,7 @@ public class PIQueryExecutor  implements HistoryQueryExecutor {
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
     private final GatewayContext context;
-    private final IPIHistoryProviderSettings settings; // Holds the settings for the current provider, needed to connect to ADX
+    private final PIHistoryProviderSettings settings; // Holds the settings for the current provider, needed to connect to ADX
     private final QueryController controller; // Holds the settings for what the user wants to query
     private final List<ColumnQueryDefinition> paths; // Holds the definition of each tag
     protected final List<DelegatingHistoryNode> nodes = new ArrayList();
@@ -47,14 +47,14 @@ public class PIQueryExecutor  implements HistoryQueryExecutor {
     boolean processed = false;
     long maxTSInData = -1;
 
-    public PIQueryExecutor(PIWebApiClient client, GatewayContext context, IPIHistoryProviderSettings settings, List<ColumnQueryDefinition> tagDefs, QueryController controller) throws URISyntaxException {
+    public PIQueryExecutor(PIWebApiClient client, GatewayContext context, PIHistoryProviderSettings settings, List<ColumnQueryDefinition> tagDefs, QueryController controller) throws URISyntaxException {
         this.context = context;
         this.settings = settings;
         this.controller = controller;
         this.paths = tagDefs;
         this.piClient = client;
 
-        for (var def : paths) {
+        for (var def : paths) { 
             this.nodes.add(new DelegatingHistoryNode(def.getColumnName()));
         }
         initTags();
@@ -126,9 +126,12 @@ public class PIQueryExecutor  implements HistoryQueryExecutor {
             // FIXME: Quick and Dirty..... Need better design
             // If we try to read from ASSETS then we know its a attribute
             // otherwise its a PI Tag. Should we encode Attributes differently?? maybe | delimited? (would that even work in Ignition?)
-            var webId = tagPath.startsWith("A") ?
+            var tagParts = tagPath.split("/");
+            var webId = tagParts[tagParts.length-1];
+            logger.info("WebID:" + webId);
+                    /*tagPath.startsWith("A") ?
                     WebIdUtils.attributeToWebID(tagPath) :
-                    WebIdUtils.toWebID(t);
+                    WebIdUtils.toWebID(t);*/
             if (blockSize == 0) {
                 // TODO: Support data pagina
                 logger.debug("Fetching raw PI data");
@@ -181,14 +184,14 @@ public class PIQueryExecutor  implements HistoryQueryExecutor {
      * @param def
      * @return
      */
-    protected HistoryNode buildRealNode(ColumnQueryDefinition def) {
+   /* protected HistoryNode buildRealNode(ColumnQueryDefinition def) {
         // TODO: What is the purpose of this function?? and why is it called from a delegate?
         var c = new ProcessedHistoryColumn(def.getColumnName(), true);
         c.setDataType(
                 DataTypeClass.Float
         );
-        return (HistoryNode)c;
-    }
+        return c;
+    }*/
 
     /**
      * Called after start reading to determine if there is more data to read

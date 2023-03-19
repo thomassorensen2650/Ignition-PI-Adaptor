@@ -14,7 +14,7 @@
 
     <properties>
        <!-- <ignition-sdk-version>8.1.18</ignition-sdk-version> -->
-        <ignition-sdk-version>8.0.1</ignition-sdk-version>
+        <ignition-sdk-version>8.1.25</ignition-sdk-version>
     </properties>
 
     <modules>

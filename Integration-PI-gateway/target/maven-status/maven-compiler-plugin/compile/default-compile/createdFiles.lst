@@ -26,5 +26,4 @@ com/unsautomation/ignition/piintegration/piwebapi/api/CustomApi.class
 com/unsautomation/ignition/piintegration/PIQueryExecutor.class
 com/unsautomation/ignition/piintegration/piwebapi/api/ElementApi.class
 com/unsautomation/ignition/piintegration/piwebapi/api/BatchApi.class
-com/unsautomation/ignition/piintegration/IPIHistoryProviderSettings.class
 com/unsautomation/ignition/piintegration/PIAggregates.class

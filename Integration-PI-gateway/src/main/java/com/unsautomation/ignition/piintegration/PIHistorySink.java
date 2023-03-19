@@ -3,7 +3,9 @@ package com.unsautomation.ignition.piintegration;
 import com.inductiveautomation.ignition.common.StatMetric;
 import com.inductiveautomation.ignition.common.i18n.LocalizedString;
 import com.inductiveautomation.ignition.gateway.history.*;
+import com.inductiveautomation.ignition.gateway.history.sf.BasicDataTransaction;
 import com.inductiveautomation.ignition.gateway.model.GatewayContext;
+import com.inductiveautomation.ignition.gateway.sqltags.model.BasicScanclassHistorySet;
 import com.unsautomation.ignition.piintegration.piwebapi.ApiException;
 import com.unsautomation.ignition.piintegration.piwebapi.PIWebApiClient;
 import org.slf4j.Logger;
@@ -17,17 +19,16 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Responsible for actually storing the data to PI. Can either use the
- * built-in store & forward system for Ignition or use its own.
+ * Responsible for actually storing the data to PI.
  */
 public class PIHistorySink implements DataSink {
     private final Logger logger = LoggerFactory.getLogger(getClass());
-    private IPIHistoryProviderSettings settings; // Holds the settings for the current provider, needed to connect to ADX
+    private PIHistoryProviderSettings settings; // Holds the settings for the current provider, needed to connect to ADX
     private final GatewayContext context;
     private final String pipelineName;
     private PIWebApiClient piClient;
 
-    public PIHistorySink(PIWebApiClient client, String pipelineName, GatewayContext context, IPIHistoryProviderSettings settings) throws URISyntaxException {
+    public PIHistorySink(PIWebApiClient client, String pipelineName, GatewayContext context, PIHistoryProviderSettings settings) throws URISyntaxException {
         this.piClient = client;
         this.pipelineName = pipelineName;
         this.context = context;
@@ -35,7 +36,7 @@ public class PIHistorySink implements DataSink {
         logger.debug("Started Sink with Pipeline: '" + pipelineName + "'");
     }
 
-    public void setSettings(IPIHistoryProviderSettings settings) {
+    public void setSettings(PIHistoryProviderSettings settings) {
         this.settings = settings;
     }
 
@@ -73,38 +74,27 @@ public class PIHistorySink implements DataSink {
      */
     @Override
     public void storeData(HistoricalData data) throws ApiException, IOException { // TODO Should we fail on error?
-        logger.debug("Received data of type '" + data.getClass().toString() + "'");
+        var validatedRecords = new ArrayList<HistoricalTagValue>();
 
-        var records = new ArrayList<HistoricalTagValue>();
+        for (var row : BasicDataTransaction.class.cast(data).getData()) {
+            if (row instanceof BasicScanclassHistorySet) {
+                var scanset = BasicScanclassHistorySet.class.cast(row);
+                if (scanset.size() == 0) continue;
 
-        List<HistoricalData> dataList;
-        if (data instanceof DataTransaction) {
-            dataList = ((DataTransaction)data).getData();
-        } else {
-            dataList = Collections.singletonList(data);
-        }
-
-        // Find all the tags passed in that have data
-        logger.debug("History set with '" + dataList.size() + "' row(s)");
-        for (var d : dataList) {
-
-            if (d instanceof ScanclassHistorySet) {
-                ScanclassHistorySet dSet = (ScanclassHistorySet) d;
-                logger.debug("Scan class set '" + dSet.getSetName() + "' has '" + dSet.size() + "' tag(s)");
-                records.addAll(dSet);
-            } else if (d instanceof HistoricalTagValue) {
-                records.add((HistoricalTagValue)d);
+                for (var r : scanset) {
+                    var tagName = r.getSource().toStringPartial();
+                    var validPiTag = tagName.matches("^[A-Za-z0-9_%][^*'?;{}\\[\\]|\\`]*$");
+                    if (!validPiTag) {
+                        validatedRecords.add(r);
+                    } else {
+                        // FIXME: Need to support Ignition tags which are not valid PI tags
+                    }
+                }
+                piClient.getCustom().ingestRecords(validatedRecords, settings.getPITagPrefix(), settings.getPIArchiver());
+            } else {
+                logger.info("Not storing data with the following class: " + row.getClass().toString());
             }
         }
-
-        for (var r : records) {
-            var tagName = r.getSource().toStringPartial();
-            var validPiTag = tagName.matches("^[A-Za-z0-9_%][^*'?;{}\\[\\]|\\`]*$");
-            if (!validPiTag) {
-                // FIXME: Need to support Ignition tags which are not valid PI tags
-            }
-        }
-        piClient.getCustom().ingestRecords(records, settings.getPITagPrefix(), settings.getPIArchiver());
     }
 
     @Override
