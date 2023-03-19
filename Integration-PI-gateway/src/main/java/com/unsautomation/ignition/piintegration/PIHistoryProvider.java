@@ -158,8 +158,6 @@ public class PIHistoryProvider implements TagHistoryProvider  {
                 var p = new QualifiedPath.Builder()
                         .set(WellKnownPathTypes.HistoryProvider, histProvider)
                         .setTag(tagPath + "/" + name).build();
-
-                logger.debug("Path: " + p.toString());
                 tr.setHasChildren(hasChildren);
                 tr.setPath(p);
                 var dp = new QualifiedPath.Builder()
@@ -167,7 +165,6 @@ public class PIHistoryProvider implements TagHistoryProvider  {
                             .setTag(tagPath + "/" + displayName).build();
                 tr.setDisplayPath(dp);
                 tr.setType(WellKnownPathTypes.Tag);
-                logger.info("DisplayPath: " + dp.toString());
                 list.add(tr);
             } else {
                 logger.warn("PI Tag '{}' is not a valid Ignition tag name.. unable to use", new Object[] { tagName });

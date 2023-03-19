@@ -128,10 +128,6 @@ public class PIQueryExecutor  implements HistoryQueryExecutor {
             // otherwise its a PI Tag. Should we encode Attributes differently?? maybe | delimited? (would that even work in Ignition?)
             var tagParts = tagPath.split("/");
             var webId = tagParts[tagParts.length-1];
-            logger.info("WebID:" + webId);
-                    /*tagPath.startsWith("A") ?
-                    WebIdUtils.attributeToWebID(tagPath) :
-                    WebIdUtils.toWebID(t);*/
             if (blockSize == 0) {
                 // TODO: Support data pagina
                 logger.debug("Fetching raw PI data");

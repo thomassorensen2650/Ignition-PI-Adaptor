@@ -88,6 +88,7 @@ public class PIHistorySink implements DataSink {
                         validatedRecords.add(r);
                     } else {
                         // FIXME: Need to support Ignition tags which are not valid PI tags
+                        logger.warn("Tagname '{}' is not valid in PI.. unable to store history", new Object[] { tagName });
                     }
                 }
                 piClient.getCustom().ingestRecords(validatedRecords, settings.getPITagPrefix(), settings.getPIArchiver());
