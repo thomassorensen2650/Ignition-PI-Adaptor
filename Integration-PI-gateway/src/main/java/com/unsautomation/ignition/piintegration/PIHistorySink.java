@@ -91,10 +91,13 @@ public class PIHistorySink implements DataSink {
                         logger.warn("Tagname '{}' is not valid in PI.. unable to store history", new Object[] { tagName });
                     }
                 }
-                piClient.getCustom().ingestRecords(validatedRecords, settings.getPITagPrefix(), settings.getPIArchiver());
+
             } else {
                 logger.info("Not storing data with the following class: " + row.getClass().toString());
             }
+        }
+        if (validatedRecords.size() > 0) {
+            piClient.getCustom().ingestRecords(validatedRecords, settings.getPITagPrefix(), settings.getPIArchiver());
         }
     }
 

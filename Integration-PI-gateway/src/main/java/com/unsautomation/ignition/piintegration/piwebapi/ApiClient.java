@@ -93,7 +93,7 @@ public class ApiClient {
         var uri = URI.create(baseUrl  + relativeUrl);
         var request = new HttpGet(uri);
 
-        logger.info("Getting: " + uri.toString());
+        //logger.info("Getting: " + uri.toString());
          //request.setHeader("Accept", "application/json");
         request.setHeader("Content-type", "application/json");
 

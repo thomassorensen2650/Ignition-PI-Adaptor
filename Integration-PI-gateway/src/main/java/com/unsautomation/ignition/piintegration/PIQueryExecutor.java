@@ -79,6 +79,12 @@ public class PIQueryExecutor  implements HistoryQueryExecutor {
 
             } else {
                 var historyTag = new ProcessedHistoryColumn(c.getColumnName(), isRaw);
+
+                /*
+                var tagParts = tagPath.split("/");
+                var webId = tagParts[tagParts.length-1];
+                piClient.getPoint().Get(webId);
+                */
                 // Set data type to float by default, we can change this later if needed
                 historyTag.setDataType(DataTypeClass.Float);
                 tags.add(historyTag);
@@ -115,19 +121,17 @@ public class PIQueryExecutor  implements HistoryQueryExecutor {
         var blockSize = (int) controller.getBlockSize();
         var startDate = controller.getQueryParameters().getStartDate();
         var endDate = controller.getQueryParameters().getEndDate();
+
         logger.debug("startReading(blockSize, startDate, endDate) called.  blockSize: " + blockSize
                 + ", startDate: " + startDate.toString() + ", endDate: " + endDate.toString() + " pathSize:" + paths.size());
 
         // TODO: Should be wrapped in PI BatchRequest to save PI web api "server round trips" if more than one reading
         for (int i = 0; i < paths.size() ; i++) {
             var t = paths.get(i).getPath();
-            var tagPath = t.getPathComponent(WellKnownPathTypes.Tag).toUpperCase();
-
-            // FIXME: Quick and Dirty..... Need better design
-            // If we try to read from ASSETS then we know its a attribute
-            // otherwise its a PI Tag. Should we encode Attributes differently?? maybe | delimited? (would that even work in Ignition?)
+            var tagPath = t.getPathComponent(WellKnownPathTypes.Tag);
             var tagParts = tagPath.split("/");
             var webId = tagParts[tagParts.length-1];
+            //logger.debug("TagPath:" + tagPath + ":" + webId);
             if (blockSize == 0) {
                 // TODO: Support data pagina
                 logger.debug("Fetching raw PI data");

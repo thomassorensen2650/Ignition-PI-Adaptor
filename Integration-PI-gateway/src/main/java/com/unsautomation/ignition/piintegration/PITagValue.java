@@ -4,6 +4,7 @@ import com.inductiveautomation.ignition.common.gson.JsonObject;
 import com.inductiveautomation.ignition.common.gson.JsonParser;
 import com.inductiveautomation.ignition.common.gson.JsonSyntaxException;
 import com.inductiveautomation.ignition.common.model.values.QualityCode;
+import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 
@@ -38,15 +39,10 @@ public class PITagValue {
         if (value.get("Good").getAsBoolean() == true) {
             return false;
         }
-
-        // If the value is not good, then we need to investigate some more
-        // TODO: Will it always be a system value when bad?
-        try {
-            (new JsonParser()).parse(value.get("Value").getAsString());
-            return true;
-        } catch (JsonSyntaxException e) {
-            return false;
-        }
-
+        // It can still be a system value with good quality.
+        // value for system quality is always JSON objects.
+        // TODO: If user stores JSON in PI TAGS, this will not work.
+        var v = value.get("Value").toString();
+        return  v.startsWith("{") && v.endsWith("}");
     }
 }
