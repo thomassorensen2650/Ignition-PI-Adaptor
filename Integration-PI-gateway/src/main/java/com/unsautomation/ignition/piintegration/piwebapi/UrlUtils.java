@@ -17,12 +17,10 @@ public class UrlUtils {
      */
     public static String urlEncode(String toEncode) throws ApiException {
         try {
-            toEncode = URLEncoder.encode(toEncode, "UTF-8");
+            return URLEncoder.encode(toEncode, "UTF-8");
         } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
             throw new ApiException("Error Encoding URL Parameters", e);
         }
-        return toEncode;
     }
 
     /**
@@ -41,12 +39,14 @@ public class UrlUtils {
         return url;
     }
 
-    /***
+    /**
+     * Adds a URL parameter to the given URL
      *
-     * @param url
-     * @param parameter
-     * @param value
-     * @return
+     * @param url       the URL to which the parameter will be added
+     * @param parameter the parameter name
+     * @param value     the parameter value
+     * @return the URL with the added parameter
+     * @throws ApiException if there's an error encoding the URL parameter
      */
     public static String addUrlParameter(String url, String parameter, String value) throws ApiException {
         if (!url.contains("?")) {

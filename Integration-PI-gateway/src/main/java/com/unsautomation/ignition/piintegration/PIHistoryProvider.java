@@ -114,7 +114,12 @@ public class PIHistoryProvider implements TagHistoryProvider  {
 
     @Override
     public ProfileStatus getStatus() {
-        return piClient.getCustom().isAvailable() ? ProfileStatus.RUNNING : ProfileStatus.ERRORED;
+        try {
+            piClient.getHome().get();
+            return ProfileStatus.RUNNING;
+        } catch (ApiException e) {
+            return ProfileStatus.ERRORED;
+        }
     }
 
     @Override

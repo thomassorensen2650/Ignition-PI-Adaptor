@@ -11,7 +11,7 @@ import simpleorm.dataset.SFieldMeta;
  * A user will fill in all of these fields. The data is stored inside of
  * Ignition's internal sqlite database into the table specified below.
  */
-public class PIHistoryProviderSettings extends PersistentRecord{
+public class PIHistoryProviderSettings extends PersistentRecord {
     public static final RecordMeta<PIHistoryProviderSettings> META = new RecordMeta<PIHistoryProviderSettings>(
             PIHistoryProviderSettings.class, "PIHistoryProviderSettings");
 

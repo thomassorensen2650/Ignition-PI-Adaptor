@@ -14,7 +14,10 @@
 
     <properties>
        <!-- <ignition-sdk-version>8.1.18</ignition-sdk-version> -->
+        <gatewayAddress>http://localhost:8088</gatewayAddress>
         <ignition-sdk-version>8.1.25</ignition-sdk-version>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     </properties>
 
     <modules>

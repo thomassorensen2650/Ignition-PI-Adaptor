@@ -7,6 +7,8 @@ import com.inductiveautomation.ignition.gateway.history.sf.BasicDataTransaction;
 import com.inductiveautomation.ignition.gateway.model.GatewayContext;
 import com.inductiveautomation.ignition.gateway.sqltags.model.BasicScanclassHistorySet;
 import com.unsautomation.ignition.piintegration.piwebapi.ApiException;
+import com.unsautomation.ignition.piintegration.piwebapi.IPIDataProducer;
+import com.unsautomation.ignition.piintegration.piwebapi.PIDataProducerBasic;
 import com.unsautomation.ignition.piintegration.piwebapi.PIWebApiClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,17 +28,23 @@ public class PIHistorySink implements DataSink {
     private PIHistoryProviderSettings settings; // Holds the settings for the current provider, needed to connect to ADX
     private final GatewayContext context;
     private final String pipelineName;
+
+    public String PIDataServer;
     private PIWebApiClient piClient;
+
+    private IPIDataProducer piSink;
 
     public PIHistorySink(PIWebApiClient client, String pipelineName, GatewayContext context, PIHistoryProviderSettings settings) throws URISyntaxException {
         this.piClient = client;
         this.pipelineName = pipelineName;
         this.context = context;
+        this.piSink = new PIDataProducerBasic(client);
         setSettings(settings);
         logger.debug("Started Sink with Pipeline: '" + pipelineName + "'");
     }
 
     public void setSettings(PIHistoryProviderSettings settings) {
+        PIDataServer = settings.getPIArchiver();
         this.settings = settings;
     }
 
@@ -56,7 +64,17 @@ public class PIHistorySink implements DataSink {
 
     @Override
     public boolean isAccepting() {
-        return piClient.getCustom().isAvailable();
+        try {
+            if (!PIDataServer.equals("")) {
+                var data = piClient.getDataServer().getByPath("\\\\" + PIDataServer);
+                return data.get("IsConnected").getAsBoolean();
+            } else {
+                return false;
+            }
+        } catch (ApiException ex) {
+            logger.error("Unable to get Data Archiver Status", ex);
+            return false;
+        }
     }
 
     @Override
@@ -91,13 +109,12 @@ public class PIHistorySink implements DataSink {
                         logger.warn("Tagname '{}' is not valid in PI.. unable to store history", new Object[] { tagName });
                     }
                 }
-
             } else {
                 logger.info("Not storing data with the following class: " + row.getClass().toString());
             }
         }
         if (validatedRecords.size() > 0) {
-            piClient.getCustom().ingestRecords(validatedRecords, settings.getPITagPrefix(), settings.getPIArchiver());
+            piSink.ingestRecords(validatedRecords, settings.getPITagPrefix(), settings.getPIArchiver());
         }
     }
 

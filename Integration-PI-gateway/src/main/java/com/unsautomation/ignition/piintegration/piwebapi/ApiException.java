@@ -7,7 +7,6 @@ public class ApiException extends Exception{
     public int statusCode = 0;
 
     public ApiException(Exception e) {
-
     }
 
     public ApiException(String message, HttpResponseException e) {

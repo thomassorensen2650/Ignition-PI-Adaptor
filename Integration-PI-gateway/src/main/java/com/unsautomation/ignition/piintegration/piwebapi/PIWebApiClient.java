@@ -13,6 +13,7 @@ public class PIWebApiClient {
         this.cacheDisabled = true;
         this.apiClient = new ApiClient(baseUrl, username, password, verifySsl, simulationMode);
     }
+    public HomeApi getHome() {return new HomeApi(apiClient);}
 
     public BatchApi getBatch() {
         return new BatchApi(apiClient);
@@ -38,11 +39,5 @@ public class PIWebApiClient {
         return new StreamApi(apiClient);
     }
 
-    public SystemApi getSystem() {
-        return new SystemApi(apiClient);
-    }
-
     public PointApi getPoint() {return new PointApi(apiClient);}
-
-    public CustomApi getCustom() { return new CustomApi(this);}
 }
