@@ -11,7 +11,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.HashMap;
 import java.util.List;
 
-public class PIDataProducerBasic implements IPIDataProducer {
+public class PIDataSinkBasic implements IPIDataSink {
 
     private final HashMap<String, String> tagCache = new HashMap<>();
 
@@ -20,7 +20,7 @@ public class PIDataProducerBasic implements IPIDataProducer {
     private final StreamApi stream;
     private final DataServerApi dataserver;
 
-    public PIDataProducerBasic(PIWebApiClient client) {
+    public PIDataSinkBasic(PIWebApiClient client) {
         this.stream = client.getStream();
         this.dataserver = client.getDataServer();
         this.point = client.getPoint();
@@ -87,5 +87,4 @@ public class PIDataProducerBasic implements IPIDataProducer {
         tagCache.put(path, tagWebId);
         return tagWebId;
     }
-
 }

@@ -11,7 +11,6 @@ import com.unsautomation.ignition.piintegration.piwebapi.PIWebApiClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -23,19 +22,17 @@ import java.util.List;
 public class PIHistorySink implements DataSink {
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private PIHistoryProviderSettings settings; // Holds the settings for the current provider, needed to connect to ADX
-    private final GatewayContext context;
     private final String pipelineName;
 
     public String PIDataServer;
-    private PIWebApiClient piClient;
+    private final PIWebApiClient piClient;
 
-    private IPIDataProducer piSink;
+    private final IPIDataSink piSink;
 
-    public PIHistorySink(PIWebApiClient client, String pipelineName, GatewayContext context, PIHistoryProviderSettings settings) throws URISyntaxException {
+    public PIHistorySink(PIWebApiClient client, String pipelineName, GatewayContext context, PIHistoryProviderSettings settings) {
         this.piClient = client;
         this.pipelineName = pipelineName;
-        this.context = context;
-        this.piSink = new PIDataProducerBasic(client);
+        this.piSink = new PIDataSinkBasic(client);
         setSettings(settings);
         logger.debug("Started Sink with Pipeline: '" + pipelineName + "'");
     }
@@ -76,7 +73,7 @@ public class PIHistorySink implements DataSink {
 
     @Override
     public List<DataSinkInformation> getInfo() {
-        return Arrays.asList(new HistorySinkStatus());
+        return List.of(new HistorySinkStatus());
     }
 
     @Override
@@ -88,12 +85,12 @@ public class PIHistorySink implements DataSink {
      * Called from Ignition when tags change and have data available for storage.
      */
     @Override
-    public void storeData(HistoricalData data) throws ApiException, IOException { // TODO Should we fail on error?
+    public void storeData(HistoricalData data) throws ApiException { // TODO Should we fail on error?
         var validatedRecords = new ArrayList<HistoricalTagValue>();
 
-        for (var row : BasicDataTransaction.class.cast(data).getData()) {
+        for (var row : ((BasicDataTransaction) data).getData()) {
             if (row instanceof BasicScanclassHistorySet) {
-                var scanset = BasicScanclassHistorySet.class.cast(row);
+                var scanset = (BasicScanclassHistorySet) row;
                 if (scanset.size() == 0) continue;
 
                 for (var r : scanset) {
@@ -103,7 +100,7 @@ public class PIHistorySink implements DataSink {
                         validatedRecords.add(r);
                     } else {
                         // FIXME: Need to support Ignition tags which are not valid PI tags
-                        logger.warn("Tagname '{}' is not valid in PI.. unable to store history", new Object[] { tagName });
+                        logger.warn("Tagname '{}' is not valid in PI.. unable to store history", tagName);
                     }
                 }
             } else {
