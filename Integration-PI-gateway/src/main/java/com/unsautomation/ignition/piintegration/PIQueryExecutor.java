@@ -35,7 +35,6 @@ import java.util.List;
 public class PIQueryExecutor  implements HistoryQueryExecutor {
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-
     private List<String> webIds;
     private final GatewayContext context;
     private final PIHistoryProviderSettings settings; // Holds the settings for the current provider, needed to connect to ADX
@@ -160,7 +159,7 @@ public class PIQueryExecutor  implements HistoryQueryExecutor {
                 queryResult = d.getContent().getAsJsonArray("Items");
             } else  {
                 var function = controller.getQueryParameters().getAggregationMode();
-                logger.debug("Fetching data using Pi Aggregate " + function);
+                logger.debug("Fetching data using Pi Aggregate: " + function);
                 var interval = (endDate.getTime() - startDate.getTime())/blockSize;
 
                 if (function.equals(PIAggregates.PI_PLOT.getIgnitionAggregate())) {
@@ -183,11 +182,8 @@ public class PIQueryExecutor  implements HistoryQueryExecutor {
             for (var dv : queryResult) {
                 var value = new PITagValue(dv.getAsJsonObject());
                 var ts = value.getTimestamp();
-                // FIXME: Float?
-
                 var h = new ProcessedValue(value.getValue(), value.getQuality(), ts,blockSize > 0);
                 tags.get(i).put(h);
-
                 if (ts > this.maxTSInData) {
                     this.maxTSInData = ts;
                 }

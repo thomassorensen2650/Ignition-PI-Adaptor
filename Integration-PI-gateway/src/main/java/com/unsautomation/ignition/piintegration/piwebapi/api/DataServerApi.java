@@ -41,25 +41,8 @@ public class DataServerApi {
     public JsonObject getPoints(String dataServerWebId, @NotNull String nameFilter, Integer startIndex, Integer maxCount, @NotNull String selectedFields) throws ApiException{
 
         if (client.getSimulationMode()) {
-            var obj = new JsonObject();
-            var r = new JsonArray();
-
-            // Simulate two data pages.....
             var tagCount = startIndex == null || startIndex == 0 ? maxCount : maxCount -10;
-            for (int i = 0; i < tagCount; i++) {
-                var first = new JsonObject();
-                first.addProperty("Name","Tag" + (i + startIndex + 1));
-                first.addProperty("WebId","xxDPWEBIDXXXTag" + (i + startIndex + 1));
-                r.add(first);
-            }
-
-            var a = new JsonObject();
-            a.addProperty("Name","Tag//asdasd");
-            a.addProperty("WebId","xxDPWEBIDXXXT");
-            r.add(a);
-
-            obj.add("Items", r);
-            return obj;
+            return client.getSimulator().getPoints(tagCount);
         }
         var url = String.format("dataservers/%s/points?", dataServerWebId);
 

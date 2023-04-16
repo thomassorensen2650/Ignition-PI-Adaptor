@@ -8,6 +8,8 @@ import java.util.Random;
 
 public class PIDataSimulator {
 
+   // public PIDataSimulator instance = new PIDataSimulator();
+   // public PIDataSimulator getInstance() { return instance;}
     public JsonObject getTags(int count){
         return null;
     }

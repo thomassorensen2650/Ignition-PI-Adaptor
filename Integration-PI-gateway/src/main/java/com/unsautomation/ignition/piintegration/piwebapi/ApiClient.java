@@ -125,8 +125,6 @@ public class ApiClient {
         try {
             if (!verifySSL) {
                 builder.setSSLHostnameVerifier(NoopHostnameVerifier.INSTANCE);
-            }
-            if (!verifySSL) {
                 builder.setSSLContext(new SSLContextBuilder().loadTrustMaterial(null, (TrustStrategy) (arg0, arg1) -> true).build());
             }
         } catch (Exception e) {

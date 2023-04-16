@@ -7,8 +7,6 @@ import com.inductiveautomation.ignition.gateway.history.sf.BasicDataTransaction;
 import com.inductiveautomation.ignition.gateway.model.GatewayContext;
 import com.inductiveautomation.ignition.gateway.sqltags.model.BasicScanclassHistorySet;
 import com.unsautomation.ignition.piintegration.piwebapi.ApiException;
-import com.unsautomation.ignition.piintegration.piwebapi.IPIDataProducer;
-import com.unsautomation.ignition.piintegration.piwebapi.PIDataProducerBasic;
 import com.unsautomation.ignition.piintegration.piwebapi.PIWebApiClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,7 +15,6 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 /**

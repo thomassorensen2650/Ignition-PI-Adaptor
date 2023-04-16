@@ -13,10 +13,7 @@ public class HomeApi {
 
     public JsonObject get() throws ApiException {
         if (client.getSimulationMode()) {
-            var first = new JsonObject();
-            first.addProperty("Self","http://127.0.0.1");
-            first.addProperty("AssetServers","http://127.0.0.1");
-            return first;
+            return new JsonObject(); // Only used to check status
         }
         return client.doGet("").getContent().getAsJsonObject();
     }

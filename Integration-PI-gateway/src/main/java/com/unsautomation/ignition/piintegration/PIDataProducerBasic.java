@@ -1,7 +1,9 @@
-package com.unsautomation.ignition.piintegration.piwebapi;
+package com.unsautomation.ignition.piintegration;
 
 import com.inductiveautomation.ignition.common.gson.JsonObject;
 import com.inductiveautomation.ignition.gateway.history.HistoricalTagValue;
+import com.unsautomation.ignition.piintegration.piwebapi.ApiException;
+import com.unsautomation.ignition.piintegration.piwebapi.PIWebApiClient;
 import com.unsautomation.ignition.piintegration.piwebapi.api.DataServerApi;
 import com.unsautomation.ignition.piintegration.piwebapi.api.PointApi;
 import com.unsautomation.ignition.piintegration.piwebapi.api.StreamApi;
