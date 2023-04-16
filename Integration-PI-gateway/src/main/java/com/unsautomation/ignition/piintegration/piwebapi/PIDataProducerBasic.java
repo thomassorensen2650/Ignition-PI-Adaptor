@@ -28,7 +28,6 @@ public class PIDataProducerBasic implements IPIDataProducer {
         // TODO
     }
 
-
     /***
      * Ingest data into PI Historian
      * Basic Implementation that uses the PI WebAPI REST Methods to Ingress data

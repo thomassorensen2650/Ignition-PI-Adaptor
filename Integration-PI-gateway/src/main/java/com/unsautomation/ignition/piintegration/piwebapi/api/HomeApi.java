@@ -3,7 +3,6 @@ package com.unsautomation.ignition.piintegration.piwebapi.api;
 import com.inductiveautomation.ignition.common.gson.JsonObject;
 import com.unsautomation.ignition.piintegration.piwebapi.ApiClient;
 import com.unsautomation.ignition.piintegration.piwebapi.ApiException;
-import com.unsautomation.ignition.piintegration.piwebapi.UrlUtils;
 
 public class HomeApi {
 

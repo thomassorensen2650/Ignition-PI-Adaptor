@@ -139,7 +139,6 @@ public class WebIdUtils {
         while (text.substring(beginIndex, endIndex).endsWith(trimBy)) {
             endIndex -= trimBy.length();
         }
-
         return text.substring(beginIndex, endIndex);
     }
 }

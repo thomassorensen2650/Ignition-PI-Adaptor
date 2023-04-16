@@ -29,6 +29,7 @@ public class ApiClient {
 
     private Boolean simulationMode;
 
+    private PIDataSimulator simulator = new PIDataSimulator();
     private final Logger logger = LoggerFactory.getLogger("PIWebApiClient");
 
     public ApiClient(String baseUrl, String username, String password, Boolean verifySsl, Boolean simulationMode) throws ApiException {
@@ -46,6 +47,8 @@ public class ApiClient {
 
     public Boolean getSimulationMode() { return simulationMode; }
 
+
+    public PIDataSimulator getSimulator() { return simulator; }
     /***
      *
      * @param relativeUrl
@@ -92,9 +95,6 @@ public class ApiClient {
 
         var uri = URI.create(baseUrl  + relativeUrl);
         var request = new HttpGet(uri);
-
-        //logger.info("Getting: " + uri.toString());
-         //request.setHeader("Accept", "application/json");
         request.setHeader("Content-type", "application/json");
 
         if (username != "") {

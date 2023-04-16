@@ -10,6 +10,7 @@ import com.inductiveautomation.ignition.gateway.model.GatewayContext;
 import com.inductiveautomation.ignition.gateway.sqltags.history.query.*;
 import com.inductiveautomation.ignition.gateway.sqltags.history.query.columns.DefaultHistoryColumn;
 import com.inductiveautomation.ignition.gateway.sqltags.history.query.columns.ErrorHistoryColumn;
+import com.inductiveautomation.ignition.gateway.sqltags.history.query.columns.HistoryColumn;
 import com.inductiveautomation.ignition.gateway.sqltags.history.query.columns.ProcessedHistoryColumn;
 import com.inductiveautomation.ignition.gateway.sqltags.history.query.processing.ProcessedValue;
 import com.inductiveautomation.metro.utils.StringUtils;
@@ -34,6 +35,8 @@ import java.util.List;
 public class PIQueryExecutor  implements HistoryQueryExecutor {
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
+
+    private List<String> webIds;
     private final GatewayContext context;
     private final PIHistoryProviderSettings settings; // Holds the settings for the current provider, needed to connect to ADX
     private final QueryController controller; // Holds the settings for what the user wants to query
@@ -67,26 +70,44 @@ public class PIQueryExecutor  implements HistoryQueryExecutor {
     private void initTags() {
         boolean isRaw = controller.getBlockSize() <= 0;
         this.tags = new ArrayList<>();
+        this.webIds = new ArrayList<>();
 
         for (var c : paths) {
             var qPath = c.getPath();
             var tagPath = qPath.getPathComponent(WellKnownPathTypes.Tag);
 
             if (StringUtils.isBlank(tagPath)) {
-                // We set the data type to Integer here, because if the column is going to be errored, at least integer types won't cause charts to complain.
-                //var historyTag = new ErrorHistoryColumn(c.getColumnName(), DataTypeClass.Integer, QualityCode.Error_Configuration);
+                var historyTag = new ErrorHistoryColumn(c.getColumnName(), DataTypeClass.Integer, QualityCode.Error_Configuration);
                 logger.error(controller.getQueryId() + ": The item path '" + c.getPath() + "' does not have a valid tag path component.");
-
             } else {
                 var historyTag = new ProcessedHistoryColumn(c.getColumnName(), isRaw);
-
-                /*
                 var tagParts = tagPath.split("/");
                 var webId = tagParts[tagParts.length-1];
-                piClient.getPoint().Get(webId);
-                */
-                // Set data type to float by default, we can change this later if needed
-                historyTag.setDataType(DataTypeClass.Float);
+                var dt = piClient.getPoint()
+                                .Get(webId)
+                                .get("PointType")
+                                .getAsString();
+                switch (dt) {
+                    case "Digital":
+                    case "String":
+                    case "Blob":
+                        historyTag.setDataType(DataTypeClass.String);
+                        break;
+                    case "Float64":
+                    case "Float32":
+                    case "Float16":
+                        historyTag.setDataType(DataTypeClass.Float);
+                        break;
+                    case "Timestamp":
+                        historyTag.setDataType(DataTypeClass.DateTime);
+                        break;
+                    case "Int32":
+                    case "Int16":
+                        historyTag.setDataType(DataTypeClass.Integer);
+                        break;
+                    default:
+                        logger.warn("Unknown DataType:" + dt);
+                }
                 tags.add(historyTag);
             }
         }
@@ -131,11 +152,11 @@ public class PIQueryExecutor  implements HistoryQueryExecutor {
             var tagPath = t.getPathComponent(WellKnownPathTypes.Tag);
             var tagParts = tagPath.split("/");
             var webId = tagParts[tagParts.length-1];
-            //logger.debug("TagPath:" + tagPath + ":" + webId);
+
             if (blockSize == 0) {
-                // TODO: Support data pagina
+                // TODO: Support data pagination
                 logger.debug("Fetching raw PI data");
-                var d =  piClient.getStream().getRecorded(t.toString(), startDate, endDate, null,null,null);
+                var d =  piClient.getStream().getRecorded(webId, startDate, endDate, null,null,null);
                 queryResult = d.getContent().getAsJsonArray("Items");
             } else  {
                 var function = controller.getQueryParameters().getAggregationMode();
@@ -160,11 +181,6 @@ public class PIQueryExecutor  implements HistoryQueryExecutor {
                 }
             }
             for (var dv : queryResult) {
-
-                //((DelegatingHistoryNode)this.nodes.get(i)).setDelegate(this.buildRealNode(dv));
-                //var x = (DefaultHistoryColumn)this.nodes.get(i).getDelegate();
-                //x.process(this.historicalValue(p));
-
                 var value = new PITagValue(dv.getAsJsonObject());
                 var ts = value.getTimestamp();
                 // FIXME: Float?
@@ -178,20 +194,6 @@ public class PIQueryExecutor  implements HistoryQueryExecutor {
             }
         }
     }
-
-    /***
-     * Currently not used... TODO: is this needed
-     * @param def
-     * @return
-     */
-   /* protected HistoryNode buildRealNode(ColumnQueryDefinition def) {
-        // TODO: What is the purpose of this function?? and why is it called from a delegate?
-        var c = new ProcessedHistoryColumn(def.getColumnName(), true);
-        c.setDataType(
-                DataTypeClass.Float
-        );
-        return c;
-    }*/
 
     /**
      * Called after start reading to determine if there is more data to read

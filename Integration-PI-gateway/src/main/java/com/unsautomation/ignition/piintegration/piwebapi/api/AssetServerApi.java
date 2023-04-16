@@ -1,12 +1,7 @@
 package com.unsautomation.ignition.piintegration.piwebapi.api;
 
 import com.inductiveautomation.ignition.common.gson.JsonArray;
-import com.inductiveautomation.ignition.common.gson.JsonObject;
-import com.unsautomation.ignition.piintegration.piwebapi.ApiClient;
-import com.unsautomation.ignition.piintegration.piwebapi.ApiException;
-import com.unsautomation.ignition.piintegration.piwebapi.UrlUtils;
-import com.unsautomation.ignition.piintegration.piwebapi.WebIdUtils;
-import org.apache.http.client.HttpResponseException;
+import com.unsautomation.ignition.piintegration.piwebapi.*;
 
 public class AssetServerApi {
 
@@ -22,17 +17,7 @@ public class AssetServerApi {
     public JsonArray list(String selectedFields) throws ApiException {
 
         if (client.getSimulationMode()) {
-            var r = new JsonArray();
-            var first = new JsonObject();
-            first.addProperty("Name", "First AF Server");
-
-            first.addProperty("WebId","xxRSENCODEDAFSERVER1");
-            var second = new JsonObject();
-            second.addProperty("Name", "Second AF Server");
-            second.addProperty("WebId","xxRSENCODEDAFSERVER2");
-            r.add(first);
-            r.add(second);
-            return r;
+         return client.getSimulator().getAFServers(4).getAsJsonArray();
         }
         var url = UrlUtils.addUrlParameter("assetservers", "selectedFields", selectedFields);
         return client.doGet(url).getContent().getAsJsonObject().get("Items").getAsJsonArray();
@@ -41,14 +26,7 @@ public class AssetServerApi {
     public JsonArray getAssetDatabases(String assetServerWebId, String selectedFields) throws ApiException {
 
         if (client.getSimulationMode()) {
-            var r = new JsonArray();
-            var first = new JsonObject();
-            first.addProperty("Name", "First AF DB");
-            var second = new JsonObject();
-            second.addProperty("Name", "Second AF DB");
-            r.add(first);
-            r.add(second);
-            return r;
+           return client.getSimulator().getAFDatabase(5).getAsJsonArray();
         }
 
         var url = String.format("assetservers/%s/assetdatabases",assetServerWebId);

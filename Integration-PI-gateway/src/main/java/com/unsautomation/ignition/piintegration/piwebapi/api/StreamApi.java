@@ -25,26 +25,7 @@ public class StreamApi {
     public JsonArray getPlot(String webId, Date startTime, Date endTime, Long intervals, String desiredUnits, String selectedFields, String timeZone) throws ApiException, HttpResponseException {
 
         if (client.getSimulationMode()) {
-            JsonObject obj = new JsonObject();
-            var items = new JsonArray();
-
-            var r = new Random();
-            var start = startTime.getTime();
-            var end = endTime.getTime();
-
-            var diff = end - start;
-            var valueOffset = diff / intervals;
-            var dt = startTime.toInstant();
-            for (int i = 0; i < intervals; i++) {
-                var item = new JsonObject();
-                item.addProperty("Timestamp", dt.toString());
-                item.addProperty("Good", true);
-                item.addProperty("Value", r.nextFloat()*100);
-                dt = dt.plusMillis(valueOffset);
-                items.add(item);
-            }
-            obj.add("Items", items);
-            return items; //resp.getData();
+           return client.getSimulator().getPlot(startTime, endTime, intervals);
         }
 
         var queryPath = "?startTime=" + startTime.toInstant().toString() + "&endTime=" + endTime.toInstant().toString()
@@ -70,26 +51,8 @@ public class StreamApi {
     public PIResponse getRecorded(String webId, Date startTime, Date endTime, String desiredUnits,  String selectedFields, String timeZone) throws ApiException {
 
         if (client.getSimulationMode()) {
-            JsonObject obj = new JsonObject();
-            JsonArray items = new JsonArray();
-
-            var r = new Random();
-            var start = startTime.getTime();
-            var end = endTime.getTime();
-
-            var diff = end - start;
-            var valueOffset = diff / 100;
-            var dt = startTime.toInstant();
-            for (int i = 0; i < 100; i++) {
-                var item = new JsonObject();
-                item.addProperty("Timestamp", dt.toString());
-                item.addProperty("Good", true);
-                item.addProperty("Value", r.nextFloat() * 100);
-                dt = dt.plusMillis(valueOffset);
-                items.add(item);
-            }
-            obj.add("Items", items);
-            return new PIResponse(200, obj);
+           var data = client.getSimulator().getPlot(startTime, endTime, 500l);
+            return new PIResponse(200, data.getAsJsonObject());
         }
         var queryPath = "?startTime=" + startTime.toInstant().toString() + "&endTime=" + endTime.toInstant().toString();
         var url = "streams/" + webId + "/recorded" + queryPath;
@@ -102,26 +65,8 @@ public class StreamApi {
     public PIResponse getInterpolated(String webId, Date startTime, Date endTime, Long intervals, String desiredUnits, String selectedFields, String timeZone) throws ApiException, HttpResponseException {
 
         if (client.getSimulationMode()) {
-            JsonObject obj = new JsonObject();
-            var items = new JsonArray();
-
-            var r = new Random();
-            var start = startTime.getTime();
-            var end = endTime.getTime();
-
-            var diff = end - start;
-            var valueOffset = diff / intervals;
-            var dt = startTime.toInstant();
-            for (int i = 0; i < intervals; i++) {
-                var item = new JsonObject();
-                item.addProperty("Timestamp", dt.toString());
-                item.addProperty("Good", true);
-                item.addProperty("Value", r.nextFloat()*100);
-                dt = dt.plusMillis(valueOffset);
-                items.add(item);
-            }
-            obj.add("Items", items);
-            return new PIResponse(200, obj);
+            var data = client.getSimulator().getPlot(startTime, endTime, intervals);
+            return new PIResponse(200, data.getAsJsonObject());
         }
 
         var queryPath = "?startTime=" + startTime.toInstant().toString() + "&endTime=" + endTime.toInstant().toString()

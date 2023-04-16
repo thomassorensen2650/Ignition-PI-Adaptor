@@ -1,12 +1,11 @@
 package com.unsautomation.ignition.piintegration.piwebapi.api;
 
 import com.inductiveautomation.ignition.common.gson.JsonArray;
-import com.inductiveautomation.ignition.common.gson.JsonElement;
 import com.inductiveautomation.ignition.common.gson.JsonObject;
 import com.unsautomation.ignition.piintegration.piwebapi.ApiClient;
 import com.unsautomation.ignition.piintegration.piwebapi.ApiException;
+import com.unsautomation.ignition.piintegration.piwebapi.PIDataSimulator;
 import com.unsautomation.ignition.piintegration.piwebapi.UrlUtils;
-import org.apache.http.client.HttpResponseException;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Map;
@@ -24,16 +23,7 @@ public class DataServerApi {
      */
     public JsonArray list(String selectedFields) throws ApiException {
         if (client.getSimulationMode()) {
-            var r = new JsonArray();
-            var first = new JsonObject();
-            first.addProperty("Name","First Server");
-            first.addProperty("WebId","xxDSENCODEDSERVER1");
-            var second = new JsonObject();
-            second.addProperty("Name", "Second Server");
-            second.addProperty("WebId","xxDSENCODEDSERVER2");
-            r.add(first);
-            r.add(second);
-            return r;
+            return client.getSimulator().getDataArchivers(5).getAsJsonArray();
         }
         var url = UrlUtils.addUrlParameter("dataservers", "selectedFields", selectedFields);
         return client.doGet(url).getContent().getAsJsonObject().get("Items").getAsJsonArray();
@@ -42,9 +32,7 @@ public class DataServerApi {
     public JsonObject getByPath(String path) throws ApiException {
 
         if (client.getSimulationMode()) {
-            var first = new JsonObject();
-            first.addProperty("webId","First Server");
-            return first;
+            return client.getSimulator().getDataArchivers(1);
         }
         var url = UrlUtils.addUrlParameter("dataservers", "path", path);
         return client.doGet(url).getContent().getAsJsonObject();
@@ -62,7 +50,6 @@ public class DataServerApi {
                 var first = new JsonObject();
                 first.addProperty("Name","Tag" + (i + startIndex + 1));
                 first.addProperty("WebId","xxDPWEBIDXXXTag" + (i + startIndex + 1));
-
                 r.add(first);
             }
 

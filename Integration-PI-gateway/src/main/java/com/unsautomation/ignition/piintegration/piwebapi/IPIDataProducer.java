@@ -17,7 +17,7 @@ public interface IPIDataProducer {
     void setupAFAutoCreate(Boolean enableAFAutoCreate, String piAFServer, String piAFDatabase, String piAFElementRoot);
 
     /***
-     * This is the main methods for ingest data to PI.
+     * This is the main method used to ingest data to PI.
      * @param records
      * @param tagPrefix
      * @param piArchiver

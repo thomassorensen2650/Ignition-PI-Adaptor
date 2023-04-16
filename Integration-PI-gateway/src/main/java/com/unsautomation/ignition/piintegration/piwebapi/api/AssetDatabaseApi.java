@@ -4,10 +4,10 @@ import com.inductiveautomation.ignition.common.gson.JsonArray;
 import com.inductiveautomation.ignition.common.gson.JsonObject;
 import com.unsautomation.ignition.piintegration.piwebapi.ApiClient;
 import com.unsautomation.ignition.piintegration.piwebapi.ApiException;
+import com.unsautomation.ignition.piintegration.piwebapi.PIDataSimulator;
 import com.unsautomation.ignition.piintegration.piwebapi.UrlUtils;
 
 public class AssetDatabaseApi {
-
 
     private final ApiClient client;
 
@@ -20,32 +20,17 @@ public class AssetDatabaseApi {
      *
      */
     public JsonArray list(String afServerWebID, String selectedFields) throws ApiException {
-
         if (client.getSimulationMode()) {
-            var r = new JsonArray();
-            var first = new JsonObject();
-            first.addProperty("Name", "First AF DB");
-            first.addProperty("WebId", "xxRDEncodedStuff");
-            var second = new JsonObject();
-            second.addProperty("Name", "Second AF DB");
-            second.addProperty("WebId", "xxRDEncodedStuff123");
-
-            r.add(first);
-            r.add(second);
-            return r;
+            return client.getSimulator().getAFDatabase(5).getAsJsonArray();
         }
         var url = String.format("assetservers/%s/assetdatabases",afServerWebID);
         url = UrlUtils.addUrlParameter(url, "selectedFields", selectedFields);
-
         return client.doGet(url).getContent().getAsJsonObject().get("Items").getAsJsonArray();
     }
 
     public JsonObject getByPath(String path) throws ApiException {
-
         if (client.getSimulationMode()) {
-            var first = new JsonObject();
-            first.addProperty("Name","Element");
-            return first;
+            return client.getSimulator().getAFElements(1);
         }
         path = UrlUtils.urlEncode(path);
         return client.doGet("assetdatabases?path=" + path).getContent().getAsJsonObject();
@@ -53,15 +38,9 @@ public class AssetDatabaseApi {
 
     public JsonArray getElements(String afDBWebId) throws ApiException {
         if (client.getSimulationMode()) {
-            var arr = new JsonArray();
-            var first = new JsonObject();
-            first.addProperty("WebId","xxEmElementWebID");
-            first.addProperty("Name","Element");
-            arr.add(first);
-            return arr;
+           return client.getSimulator().getAFElements(10).getAsJsonArray();
         }
         var url = String.format("assetdatabases/%s/elements",afDBWebId);
         return client.doGet(url).getContent().getAsJsonObject().get("Items").getAsJsonArray();
     }
-
 }
