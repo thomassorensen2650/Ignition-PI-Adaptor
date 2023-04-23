@@ -61,6 +61,8 @@ public class PIDataSinkBasic implements IPIDataSink {
 
         var path = "\\\\" + dataServer + "\\" + tagName;
         if (tagCache.containsKey(path)) {
+            // TODO: What is someone deletes a tag in PI manually?
+            // Do we need some sort of clear cache at fixed internal?
             return tagCache.get(path);
         }
 
@@ -71,14 +73,11 @@ public class PIDataSinkBasic implements IPIDataSink {
         } catch (ApiException ex) {
             if (ex.statusCode == 404) { // Tag not found;
                 var x = new JsonObject();
-                var tagParts = path.substring(2).split("\\\\");
-                var archiver = tagParts[0];
-                var tag = tagParts[1];
-                x.addProperty("Name", tag);
+                x.addProperty("Name", tagName);
                 x.addProperty("PointType", "Float32");
                 x.addProperty("PointClass", "Classic");
 
-                var archiverWebId = this.dataserver.getByPath("\\\\" + archiver).getAsJsonObject().get("WebId").getAsString();
+                var archiverWebId = this.dataserver.getByPath("\\\\" + dataServer).getAsJsonObject().get("WebId").getAsString();
                 tagWebId = this.dataserver.createPoint(archiverWebId, x);
             } else {
                 throw ex;

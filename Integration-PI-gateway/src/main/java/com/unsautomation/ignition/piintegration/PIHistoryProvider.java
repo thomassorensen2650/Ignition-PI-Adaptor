@@ -108,8 +108,7 @@ public class PIHistoryProvider implements TagHistoryProvider  {
     @Override
     public List<Aggregate> getAvailableAggregates() {
         logger.info("Calling getAvailableAggregates");
-        final var values = Arrays.stream(PIAggregates.values()).map(PIAggregates::getIgnitionAggregate).collect(Collectors.toList());
-        return values;
+        return Arrays.stream(PIAggregates.values()).map(PIAggregates::getIgnitionAggregate).collect(Collectors.toList());
     }
 
     @Override
@@ -154,7 +153,7 @@ public class PIHistoryProvider implements TagHistoryProvider  {
             // Path should we WebID
             // TODO: Find a better solution, need to dig a bit deeper into the Igniton SDK.
             var tagName = item.getAsJsonObject().get("Name").getAsString(); //
-            var displayName = hasChildren ? tagName : tagName.replaceAll("[^A-Za-z0-9\\.\\_\\'\\-\\:\\(\\)]", ":");
+            var displayName = hasChildren ? tagName : tagName.replaceAll("[^A-Za-z0-9._'\\-:()]", ":");
             final var name = hasChildren ? displayName : item.getAsJsonObject().get("WebId").getAsString();
             final var validIgnName = displayName.matches("^[\\p{L}\\d][\\p{L}\\d_'-:()\\s]*$");
 
@@ -172,7 +171,7 @@ public class PIHistoryProvider implements TagHistoryProvider  {
                 tr.setType(WellKnownPathTypes.Tag);
                 list.add(tr);
             } else {
-                logger.warn("PI Tag '{}' is not a valid Ignition tag name.. unable to use", new Object[] { tagName });
+                logger.warn("PI Tag '{}' is not a valid Ignition tag name.. unable to use", tagName);
             }
         }
         return list;
