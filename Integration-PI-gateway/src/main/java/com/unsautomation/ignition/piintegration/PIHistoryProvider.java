@@ -41,7 +41,7 @@ public class PIHistoryProvider implements TagHistoryProvider  {
     private final GatewayContext context;
     private PIHistoryProviderSettings settings;
     private PIHistorySink sink;
-    private PIWebApiClient piClient;
+    public PIWebApiClient piClient;
 
     int pagSize = 1000;
     int maxResultSize = 1000000;
@@ -114,9 +114,10 @@ public class PIHistoryProvider implements TagHistoryProvider  {
     @Override
     public ProfileStatus getStatus() {
         try {
-            piClient.getHome().get();
-            return ProfileStatus.RUNNING;
+            var response = piClient.getHome().get();
+            return response.getStatus() != 200 ? ProfileStatus.ERRORED : ProfileStatus.RUNNING;
         } catch (ApiException e) {
+            //logger.error("Unable to get API Status", e);
             return ProfileStatus.ERRORED;
         }
     }

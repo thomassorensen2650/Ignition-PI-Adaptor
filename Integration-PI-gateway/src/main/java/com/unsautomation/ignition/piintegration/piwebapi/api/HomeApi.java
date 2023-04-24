@@ -3,6 +3,7 @@ package com.unsautomation.ignition.piintegration.piwebapi.api;
 import com.inductiveautomation.ignition.common.gson.JsonObject;
 import com.unsautomation.ignition.piintegration.piwebapi.ApiClient;
 import com.unsautomation.ignition.piintegration.piwebapi.ApiException;
+import com.unsautomation.ignition.piintegration.piwebapi.PIResponse;
 
 public class HomeApi {
 
@@ -11,10 +12,10 @@ public class HomeApi {
         this.client = apiClient;
     }
 
-    public JsonObject get() throws ApiException {
+    public PIResponse get() throws ApiException {
         if (client.getSimulationMode()) {
-            return new JsonObject(); // Only used to check status
+            return new PIResponse(200, new JsonObject()); // Only used to check status
         }
-        return client.doGet("").getContent().getAsJsonObject();
+        return client.doGet("");
     }
 }

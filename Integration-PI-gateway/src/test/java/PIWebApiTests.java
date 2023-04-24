@@ -4,8 +4,7 @@ import com.unsautomation.ignition.piintegration.piwebapi.PIWebApiClient;
 import com.unsautomation.ignition.piintegration.piwebapi.UrlUtils;
 import com.unsautomation.ignition.piintegration.piwebapi.WebIdUtils;
 import org.apache.commons.lang3.time.DateUtils;
-import org.joda.time.DateTime;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Date;
 import java.util.Map;
