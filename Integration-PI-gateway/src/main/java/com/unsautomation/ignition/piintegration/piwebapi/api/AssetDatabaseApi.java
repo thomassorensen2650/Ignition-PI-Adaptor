@@ -25,7 +25,7 @@ public class AssetDatabaseApi {
         }
         var url = String.format("assetservers/%s/assetdatabases",afServerWebID);
         url = UrlUtils.addUrlParameter(url, "selectedFields", selectedFields);
-        return client.doGet(url).getContent().getAsJsonObject().get("Items").getAsJsonArray();
+        return client.doGet(url).getContent().get("Items").getAsJsonArray();
     }
 
     public JsonObject getByPath(String path) throws ApiException {

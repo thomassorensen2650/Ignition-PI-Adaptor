@@ -109,8 +109,9 @@ public class ApiClient {
 
         try {
             var response = httpClient.execute(request); //, HttpResponse.BodyHandlers.ofString());
+
             return new PIResponse(response);
-        } catch (IOException ex) {
+        } catch (Exception ex) {
             throw new ApiException("Unknown Exception on doGet", ex);
         }
     }

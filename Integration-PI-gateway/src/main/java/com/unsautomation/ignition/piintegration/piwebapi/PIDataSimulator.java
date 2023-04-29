@@ -61,7 +61,7 @@ public class PIDataSimulator {
         return null;
     }
 
-    public JsonArray getPlot(Date startTime, Date endTime, Long intervals) {
+    public JsonObject getPlot(Date startTime, Date endTime, Long intervals) {
         JsonObject obj = new JsonObject();
         var items = new JsonArray();
 
@@ -81,6 +81,6 @@ public class PIDataSimulator {
             items.add(item);
         }
         obj.add("Items", items);
-        return items; //resp.getData();
+        return obj; //resp.getData();
     }
 }

@@ -2,6 +2,7 @@ package com.unsautomation.ignition.piintegration.piwebapi.api;
 
 import com.inductiveautomation.ignition.common.gson.JsonArray;
 import com.unsautomation.ignition.piintegration.piwebapi.*;
+import org.bouncycastle.pqc.jcajce.provider.qtesla.SignatureSpi;
 
 public class AssetServerApi {
 
@@ -14,13 +15,14 @@ public class AssetServerApi {
      * Retrieve a list of all Asset Servers known to this service.
      *
      */
-    public JsonArray list(String selectedFields) throws ApiException {
+    public PIResponse list(String selectedFields) throws ApiException {
 
         if (client.getSimulationMode()) {
-         return client.getSimulator().getAFServers(4).getAsJsonArray();
+         var data = client.getSimulator().getAFServers(4);
+         return new PIResponse(200, data);
         }
         var url = UrlUtils.addUrlParameter("assetservers", "selectedFields", selectedFields);
-        return client.doGet(url).getContent().getAsJsonObject().get("Items").getAsJsonArray();
+        return client.doGet(url);
     }
 
     public JsonArray getAssetDatabases(String assetServerWebId, String selectedFields) throws ApiException {

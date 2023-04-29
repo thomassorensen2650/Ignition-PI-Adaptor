@@ -115,7 +115,7 @@ public class PIHistoryProvider implements TagHistoryProvider  {
     public ProfileStatus getStatus() {
         try {
             var response = piClient.getHome().get();
-            return response.getStatus() != 200 ? ProfileStatus.ERRORED : ProfileStatus.RUNNING;
+            return ProfileStatus.RUNNING;
         } catch (ApiException e) {
             //logger.error("Unable to get API Status", e);
             return ProfileStatus.ERRORED;
@@ -268,7 +268,8 @@ public class PIHistoryProvider implements TagHistoryProvider  {
 
         switch (tagType) {
             case AssetsRoot: // Top level Elements search
-                data = piClient.getAssetServer().list("Items.Name");
+                var response = piClient.getAssetServer().list("Items.Name");
+                data = response.getContent().get("Items").getAsJsonArray();
                 data = filterList(data, settings.getBrowsableAFServers());
                 list.addAll(createResults(qualifiedPath, data, true));
                 break;
@@ -350,7 +351,7 @@ public class PIHistoryProvider implements TagHistoryProvider  {
         if (null == filter || filter.equals("")) {
             return list;
         }
-        final var filterNames = Arrays.asList(filter.toUpperCase().split(","));
+        final var filterNames = Arrays.asList(Arrays.stream(filter.toUpperCase().split(",")).map( s -> s.trim()).toArray());
         final var r = new JsonArray();
 
         for (var item : list) {

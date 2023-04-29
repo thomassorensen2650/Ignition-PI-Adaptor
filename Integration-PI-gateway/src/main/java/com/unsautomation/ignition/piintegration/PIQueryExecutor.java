@@ -14,6 +14,7 @@ import com.inductiveautomation.ignition.gateway.sqltags.history.query.columns.Hi
 import com.inductiveautomation.ignition.gateway.sqltags.history.query.columns.ProcessedHistoryColumn;
 import com.inductiveautomation.ignition.gateway.sqltags.history.query.processing.ProcessedValue;
 import com.inductiveautomation.metro.utils.StringUtils;
+import com.unsautomation.ignition.piintegration.piwebapi.ApiException;
 import com.unsautomation.ignition.piintegration.piwebapi.PIWebApiClient;
 import com.unsautomation.ignition.piintegration.piwebapi.WebIdUtils;
 import org.slf4j.Logger;
@@ -59,14 +60,13 @@ public class PIQueryExecutor  implements HistoryQueryExecutor {
         for (var def : paths) { 
             this.nodes.add(new DelegatingHistoryNode(def.getColumnName()));
         }
-        initTags();
     }
 
     /**
      * Initialize the tags we want to query. This will create a list of Tags
      * that provides the fully qualified tag path, aggregation function, and tag to return.
      */
-    private void initTags() {
+    private void initTags() throws ApiException {
         boolean isRaw = controller.getBlockSize() <= 0;
         this.tags = new ArrayList<>();
         this.webIds = new ArrayList<>();
@@ -83,7 +83,7 @@ public class PIQueryExecutor  implements HistoryQueryExecutor {
                 var tagParts = tagPath.split("/");
                 var webId = tagParts[tagParts.length-1];
                 var dt = piClient.getPoint()
-                                .Get(webId)
+                                .get(webId)
                                 .get("PointType")
                                 .getAsString();
                 switch (dt) {
@@ -105,6 +105,7 @@ public class PIQueryExecutor  implements HistoryQueryExecutor {
                         historyTag.setDataType(DataTypeClass.Integer);
                         break;
                     default:
+                        historyTag.setDataType(DataTypeClass.Float);
                         logger.warn("Unknown DataType:" + dt);
                 }
                 tags.add(historyTag);
@@ -125,6 +126,7 @@ public class PIQueryExecutor  implements HistoryQueryExecutor {
      */
     @Override
     public void initialize() throws Exception {
+        initTags();
     }
 
     @Override
@@ -162,9 +164,9 @@ public class PIQueryExecutor  implements HistoryQueryExecutor {
                 logger.debug("Fetching data using Pi Aggregate: " + function);
                 var interval = (endDate.getTime() - startDate.getTime())/blockSize;
 
-                if (function.equals(PIAggregates.PI_PLOT.getIgnitionAggregate())) {
+                if (function.equals(PIAggregates.PI_PLOT)) {
                     queryResult = piClient.getStream().getPlot(webId, startDate, endDate, interval, null,null,null);
-                } else if (function.equals(PIAggregates.PI_INTERPOLATED.getIgnitionAggregate())) {
+                } else if (function.equals(PIAggregates.PI_INTERPOLATED)) {
                     var d = piClient.getStream().getInterpolated(webId, startDate, endDate, interval, null,null,null);
                     queryResult = d.getContent().getAsJsonArray("Items");
                 } else {

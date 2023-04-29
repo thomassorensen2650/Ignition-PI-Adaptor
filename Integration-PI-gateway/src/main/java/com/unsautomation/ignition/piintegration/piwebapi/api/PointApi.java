@@ -13,10 +13,6 @@ public class PointApi {
         this.client = apiClient;
     }
 
-    public JsonObject Get(String webId) {
-        return null;
-    }
-
     public JsonObject getByPath(String path) throws ApiException {
 
         if (client.getSimulationMode()) {

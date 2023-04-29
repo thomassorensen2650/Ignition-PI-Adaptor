@@ -27,27 +27,38 @@ public class PIResponse {
     @SerializedName("Content")
     private JsonObject content;
 
-    public PIResponse(CloseableHttpResponse response) throws ApiException, IOException {
+    public PIResponse(CloseableHttpResponse response) throws ApiException {
+
 
         var c = "";
         try {
             c = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8.name());
-        } catch (EOFException ex) {
+        } catch (IOException ex) {
             content = null; // No respose body (common on POST requests)
         }
-        status = response.getStatusLine().getStatusCode();
+        this.status = response.getStatusLine().getStatusCode();
         headers = Arrays.stream(response.getAllHeaders()).collect(Collectors
                 .toMap(k-> k.getName(), v -> v.getValue()));
-
-        if (status > 299) {
-            throw new ApiException(status, c);
-        }
+        checkHttpSuccess();
         content = (new JsonParser()).parse(c).getAsJsonObject();
     }
 
-    public PIResponse(Integer status, JsonObject content) {
-        setStatus(status);
+    /**
+     * Used for simulation mostly
+     * @param status
+     * @param content
+     * @throws ApiException
+     */
+    public PIResponse(Integer status, JsonObject content) throws ApiException {
+        this.status = status;
+        checkHttpSuccess();
         this.content = content;
+    }
+
+    private void checkHttpSuccess() throws ApiException {
+        if (status < 200 || status >= 300 ) {
+            throw new ApiException(status, "Invalid response from PI");
+        }
     }
     private void setStatus(Integer status) { this.status = status;}
 

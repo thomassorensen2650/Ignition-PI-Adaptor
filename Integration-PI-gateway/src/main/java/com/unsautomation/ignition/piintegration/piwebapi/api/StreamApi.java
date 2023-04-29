@@ -25,7 +25,7 @@ public class StreamApi {
     public JsonArray getPlot(String webId, Date startTime, Date endTime, Long intervals, String desiredUnits, String selectedFields, String timeZone) throws ApiException, HttpResponseException {
 
         if (client.getSimulationMode()) {
-           return client.getSimulator().getPlot(startTime, endTime, intervals);
+           return client.getSimulator().getPlot(startTime, endTime, intervals).get("Items").getAsJsonArray();
         }
 
         var queryPath = "?startTime=" + startTime.toInstant().toString() + "&endTime=" + endTime.toInstant().toString()
