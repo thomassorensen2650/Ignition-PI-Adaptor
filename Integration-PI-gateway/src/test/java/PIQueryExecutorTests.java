@@ -92,17 +92,19 @@ public class PIQueryExecutorTests {
     @Test
     public void getPITagDataMinMax() throws ApiException {
         // TODO
-        var simulatedData = simulateWebApiItemsResponse(new String[]{"WebId", "Name", "PointType"}, 1)
-                .getAsJsonArray("Items")
-                .get(0).getAsJsonObject();
 
+        var simulatedData = simulator.getPoints(1).getAsJsonArray("Items").get(0).getAsJsonObject();
+
+
+          //      .getAsJsonArray("Items")
+        //        .get(0).getAsJsonObject();
         var p = new QualifiedPath.Builder()
                 .set(WellKnownPathTypes.HistoryProvider, "Hi")
                 .setTag("Assets/My Server/My DB/Random/Element")
                 .build();
 
         var plotData = simulator.getPlot(queryParams.getStartDate(), queryParams.getEndDate(), 7200L);
-;
+
         // API Call to lookup Datatype
         lenient().when(webApiClient.doGet(eq("points/Element"))).thenReturn(new PIResponse(200, simulatedData));
         lenient().when(webApiClient.doGet(startsWith("streams/Element/"))).thenReturn(new PIResponse(200, plotData));
@@ -116,14 +118,14 @@ public class PIQueryExecutorTests {
         try {
             queryExecutor.initialize();
         }catch (Exception ex) {
-            assertFalse(true);
+            fail();
             throw new RuntimeException(ex);
         }
 
         try {
             queryExecutor.startReading();
         } catch (Exception ex) {
-            assertFalse(true);
+            fail();
             throw new RuntimeException(ex);
         }
 
@@ -141,22 +143,55 @@ public class PIQueryExecutorTests {
 
          while(phc.getNextTimestamp() != Long.MAX_VALUE) {
             i++;
-            x = phc.getValue(phc.getNextTimestamp(),0);
-             phc.markCompleted(phc.getNextTimestamp());
+            phc.getValue(phc.getNextTimestamp(),0);
+            phc.markCompleted(phc.getNextTimestamp());
 
          }
         assertEquals(7200,i);
+
+         queryExecutor.endReading();
     }
 
     @Test
-    public void getPITagDataMinMaxError() {
-        // TODO
+    public void getPITagDataMinMaxError() throws ApiException {
+
+        var p = new QualifiedPath.Builder()
+                .set(WellKnownPathTypes.HistoryProvider, "Hi")
+                .setTag("Assets/My Server/My DB/Random/Element")
+                .build();
+
+        lenient().when(webApiClient.doGet(eq("points/Element"))).thenThrow(new ApiException(404, "Unable to Fetch Stuff..."));
+
+
+        var tags = new ArrayList<ColumnQueryDefinition>();
+        tags.add(new ColumnQueryDefinition(p, PIAggregates.PI_PLOT.getIgnitionAggregate(), "Element"));
+        var queryExecutor = historyProvider.createQuery(tags, queryController);
+        assertThrows(ApiException.class, queryExecutor::initialize);
     }
 
     @Test
     public void getPIDataRaw() {
-        // TODO
+
     }
+
+    @Test
+    public void smallMethodTest() {
+        var p = new QualifiedPath.Builder()
+                .set(WellKnownPathTypes.HistoryProvider, "Hi")
+                .setTag("Assets/My Server/My DB/Random/Element")
+                .build();
+
+        var tags = new ArrayList<ColumnQueryDefinition>();
+        tags.add(new ColumnQueryDefinition(p, PIAggregates.PI_PLOT.getIgnitionAggregate(), "Element"));
+        var queryExecutor = historyProvider.createQuery(tags, queryController);
+
+        assertTrue(queryExecutor.hasMore());
+        queryExecutor.processData();
+        assertFalse(queryExecutor.hasMore());
+        assertEquals(Long.MAX_VALUE, queryExecutor.nextTime());
+        assertEquals(0, queryExecutor.getEffectiveWindowSizeMS());
+    }
+
 
     @Test
     public void getPIDataRawError() {
@@ -165,7 +200,7 @@ public class PIQueryExecutorTests {
 
     // TODO: Get Attribute Data
     // FIXMEwdz
-    public JsonObject simulateWebApiItemsResponse(String[] attributes, int count) {
+   /* public JsonObject simulateWebApiItemsResponse(String[] attributes, int count) {
         var root = new JsonObject();
         var items = new JsonArray();
         root.add("Items", items);
@@ -178,5 +213,5 @@ public class PIQueryExecutorTests {
             items.add(item);
         }
         return root;
-    }
+    } */
 }

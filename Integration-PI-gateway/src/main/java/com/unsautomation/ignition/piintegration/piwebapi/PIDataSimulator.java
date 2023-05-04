@@ -1,6 +1,7 @@
 package com.unsautomation.ignition.piintegration.piwebapi;
 
 import com.inductiveautomation.ignition.common.gson.JsonArray;
+import com.inductiveautomation.ignition.common.gson.JsonElement;
 import com.inductiveautomation.ignition.common.gson.JsonObject;
 
 import java.util.Date;
@@ -58,7 +59,13 @@ public class PIDataSimulator {
     }
 
     public JsonObject getPoints(int count) {
-        return null;
+        var data = simulateWebApiItemsResponse(new String[] {"Name", "WebID"}, count);
+
+        for (JsonElement d : data.getAsJsonArray("Items")) {
+            d.getAsJsonObject().addProperty("PointType", "Float");
+        }
+        return data;
+
     }
 
     public JsonObject getPlot(Date startTime, Date endTime, Long intervals) {
@@ -82,5 +89,20 @@ public class PIDataSimulator {
         }
         obj.add("Items", items);
         return obj; //resp.getData();
+    }
+
+    public JsonObject simulateWebApiItemsResponse(String[] attributes, int count) {
+        var root = new JsonObject();
+        var items = new JsonArray();
+        root.add("Items", items);
+
+        for (int i = 0; i < count; i++) {
+            var item = new JsonObject();
+            for (String attribute : attributes) {
+                item.addProperty(attribute, String.format("%s %s", attribute, i));
+            }
+            items.add(item);
+        }
+        return root;
     }
 }
