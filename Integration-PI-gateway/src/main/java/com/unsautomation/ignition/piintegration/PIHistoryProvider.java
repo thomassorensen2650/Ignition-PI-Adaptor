@@ -322,13 +322,13 @@ public class PIHistoryProvider implements TagHistoryProvider  {
         }
 
         // if the returned data size == pageSize, then there is a good change there are more data pages.
-        // We only support paging for PI Tags, and a AF Structure with 1000+ elements in one level would be pretty bad.
+        // We only support paging for PI Tags, and a AF Structure with 1000+ elements in one level would be pretty unlikely/bad.
         if (pagSize == data.size() && tagType == PIObjectType.PIServer) {
             currentContinuationPoint += pagSize;
-            // TODO: This does not work..
-            //  Not implemented in Ignition?
-            //result.setContinuationPoint(currentContinuationPoint.toString());
-            //result.setTotalAvailableResults(currentContinuationPoint + pagSize);
+
+            // XXX: This does not work.. Not implemented in Ignition?
+            // result.setContinuationPoint(currentContinuationPoint.toString());
+            // result.setTotalAvailableResults(currentContinuationPoint + pagSize);
 
             if (currentContinuationPoint > maxResultSize) {
                 throw new Exception("API Limit of 1M results reached. Aborting...");
@@ -351,7 +351,7 @@ public class PIHistoryProvider implements TagHistoryProvider  {
         if (null == filter || filter.equals("")) {
             return list;
         }
-        final var filterNames = Arrays.asList(Arrays.stream(filter.toUpperCase().split(",")).map( s -> s.trim()).toArray());
+        final var filterNames = Arrays.asList(Arrays.stream(filter.toUpperCase().split(",")).map(String::trim).toArray());
         final var r = new JsonArray();
 
         for (var item : list) {

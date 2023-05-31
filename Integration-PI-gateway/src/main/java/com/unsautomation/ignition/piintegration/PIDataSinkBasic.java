@@ -44,12 +44,9 @@ public class PIDataSinkBasic implements IPIDataSink {
             if (tagPrefix != null && !tagPrefix.equals("")) {
                 tagName = tagPrefix + tagName;
             }
-            var type = record.getTypeClass().isNumeric() ?
-                    record.getTypeClass().getDataType().isFloatingPoint() ? "Float" : "Int32" : "String";
-            var point = new JsonObject();
-            point.addProperty("Name", tagName);
-            point.addProperty("PointType", type);
+
             var webId = getOrCreateTag(piArchiver, tagName);
+
             var value = new JsonObject();
             value.addProperty("value", (Number) record.getValue()); // FIXME: What about texts
             value.addProperty("timestamp", record.getTimestamp().getTime());

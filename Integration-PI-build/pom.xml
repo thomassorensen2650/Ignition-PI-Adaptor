@@ -49,7 +49,7 @@
                     <moduleDescription>${project.description}</moduleDescription>
                     <moduleVersion>1.0.0-SNAPSHOT</moduleVersion>
                     <requiredIgnitionVersion>8.0.0</requiredIgnitionVersion>
-
+                    <licenseFile>license.html</licenseFile>
                     <hooks>
                         <hook>
                             <scope>G</scope>

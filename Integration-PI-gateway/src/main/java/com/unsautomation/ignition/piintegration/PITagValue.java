@@ -29,7 +29,7 @@ public class PITagValue {
     }
 
     public Object getValue() {
-        return isSystemValue() ? null : value.get("Value").getAsFloat(); }
+        return isSystemValue() ? null : value.get("Value"); }
 
     public Boolean isSystemValue() {
 
