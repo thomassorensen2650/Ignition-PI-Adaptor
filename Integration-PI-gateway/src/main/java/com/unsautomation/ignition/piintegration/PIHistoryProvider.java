@@ -9,11 +9,14 @@ import com.inductiveautomation.ignition.common.browsing.TagResult;
 import com.inductiveautomation.ignition.common.gson.JsonArray;
 import com.inductiveautomation.ignition.common.model.values.QualityCode;
 import com.inductiveautomation.ignition.common.sqltags.history.Aggregate;
+import com.inductiveautomation.ignition.common.sqltags.history.annotations.Annotation;
+import com.inductiveautomation.ignition.common.sqltags.history.annotations.TypeFilter;
 import com.inductiveautomation.ignition.common.util.Timeline;
 import com.inductiveautomation.ignition.common.util.TimelineSet;
 import com.inductiveautomation.ignition.gateway.localdb.persistence.RecordListenerAdapter;
 import com.inductiveautomation.ignition.gateway.model.GatewayContext;
 import com.inductiveautomation.ignition.gateway.model.ProfileStatus;
+import com.inductiveautomation.ignition.gateway.sqltags.history.AnnotationQueryProvider;
 import com.inductiveautomation.ignition.gateway.sqltags.history.TagHistoryProvider;
 import com.inductiveautomation.ignition.gateway.sqltags.history.TagHistoryProviderInformation;
 import com.inductiveautomation.ignition.gateway.sqltags.history.query.ColumnQueryDefinition;
@@ -35,7 +38,7 @@ import static com.unsautomation.ignition.piintegration.piwebapi.PIObjectType.Ass
 import static com.unsautomation.ignition.piintegration.piwebapi.PIObjectType.PointsRoot;
 
 // , AnnotationQueryProvider
-public class PIHistoryProvider implements TagHistoryProvider  {
+public class PIHistoryProvider implements TagHistoryProvider {
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private final String name;
     private final GatewayContext context;
@@ -73,8 +76,8 @@ public class PIHistoryProvider implements TagHistoryProvider  {
      */
     public void setSettings(PIHistoryProviderSettings settings) throws ApiException {
         this.settings = settings;
-        this.maxResultSize = settings.getAPIMaxResponseLimit();
-        this.pagSize = settings.getAPIRequestPageSize();
+        maxResultSize = settings.getAPIMaxResponseLimit();
+        pagSize = settings.getAPIRequestPageSize();
         piClient = new PIWebApiClient(settings.getWebAPIUrl(), settings.getUsername(), settings.getPassword(), settings.getVerifySSL(), false, settings.getSimulationMode());
     }
 
@@ -93,7 +96,7 @@ public class PIHistoryProvider implements TagHistoryProvider  {
     @Override
     public void shutdown() {
         try {
-            // Unregister the data sink so it doesn't show up in the list to choose from
+            // Unregister the data sink, so it doesn't show up in the list to choose from
             context.getHistoryManager().unregisterSink(sink, false);
         } catch (Throwable e) {
             logger.error("Error shutting down PI history sink", e);
@@ -108,7 +111,9 @@ public class PIHistoryProvider implements TagHistoryProvider  {
     @Override
     public List<Aggregate> getAvailableAggregates() {
         logger.info("Calling getAvailableAggregates");
-        return Arrays.stream(PIAggregates.values()).map(PIAggregates::getIgnitionAggregate).collect(Collectors.toList());
+        return Arrays.stream(PIAggregates.values())
+                .map(PIAggregates::getIgnitionAggregate)
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -149,9 +154,9 @@ public class PIHistoryProvider implements TagHistoryProvider  {
         final var histProvider = basePath.getPathComponent(WellKnownPathTypes.HistoryProvider);
 
         for (var item : items) {
-            // If this is a PI Point on AF Attribute, then we can clean up illegal charaters
+            // If this is a PI Point on AF Attribute, then we can clean up illegal chars.
             // Display Path should be cleanName
-            // Path should we WebID
+            // Path should be WebID
             // TODO: Find a better solution, need to dig a bit deeper into the Igniton SDK.
             var tagName = item.getAsJsonObject().get("Name").getAsString(); //
             var displayName = hasChildren ? tagName : tagName.replaceAll("[^A-Za-z0-9._'\\-:()]", ":");
@@ -388,9 +393,18 @@ public class PIHistoryProvider implements TagHistoryProvider  {
         return new TimelineSet(timelines);
     }
 
-    /*
     @Override
     public List<Annotation> queryAnnotations(List<QualifiedPath> paths, Date start, Date end, TypeFilter filter, String queryId) throws Exception {
-        return null;
-    } */
+        var a = new Annotation();
+
+        var x = a.newBuilder().data("Hello World")
+                .start(start)
+                .end(end)
+                .path(paths.get(0))
+                .build();
+
+        var v = new ArrayList<Annotation>();
+        v.add(x);
+        return v;
+    }
 }
