@@ -4,20 +4,15 @@ import com.unsautomation.ignition.piintegration.piwebapi.api.*;
 
 public class PIWebApiClient {
 
-    public ApiClient apiClient = null;
-    private String baseUrl = null;
-    private Boolean cacheDisabled = null;
+    public ApiClient apiClient;
 
     public PIWebApiClient(String baseUrl, String username, String password, Boolean verifySsl, Boolean debug, Boolean simulationMode) throws ApiException {
-        this.baseUrl = baseUrl;
-        this.cacheDisabled = true;
+        Boolean cacheDisabled = true;
         this.apiClient = new ApiClient(baseUrl, username, password, verifySsl, simulationMode);
     }
-    public HomeApi getHome() {return new HomeApi(apiClient);}
+    public HomeApi getHome() { return new HomeApi(apiClient);}
 
-    public BatchApi getBatch() {
-        return new BatchApi(apiClient);
-    }
+    public BatchApi getBatch() { return new BatchApi(apiClient); }
 
     public AssetServerApi getAssetServer() {
         return new AssetServerApi(apiClient);

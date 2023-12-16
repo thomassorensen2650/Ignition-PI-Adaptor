@@ -28,13 +28,13 @@ public class AssetDatabaseApi {
         return client.doGet(url).getContent().get("Items").getAsJsonArray();
     }
 
-    public JsonObject getByPath(String path) throws ApiException {
+   /* public JsonObject getByPath(String path) throws ApiException {
         if (client.getSimulationMode()) {
             return client.getSimulator().getAFElements(1);
         }
         path = UrlUtils.urlEncode(path);
         return client.doGet("assetdatabases?path=" + path).getContent().getAsJsonObject();
-    }
+    }*/
 
     public JsonArray getElements(String afDBWebId) throws ApiException {
         if (client.getSimulationMode()) {

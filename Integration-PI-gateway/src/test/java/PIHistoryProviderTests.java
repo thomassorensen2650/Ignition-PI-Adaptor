@@ -160,7 +160,7 @@ public class PIHistoryProviderTests {
     }
 
     @Test
-    public void browseAFServersBadResponseTest() throws ApiException {
+    public void browseAFServersBadResponseTest()  {
         try {
             var p = new QualifiedPath.Builder()
                     .set(WellKnownPathTypes.HistoryProvider, "Hi")
@@ -188,7 +188,7 @@ public class PIHistoryProviderTests {
             assertEquals(0, result.getReturnedSize());
 
         } catch (ApiException ex) {
-            assertFalse(false);
+            fail();
         }
 
     }
@@ -261,7 +261,7 @@ public class PIHistoryProviderTests {
         assertEquals(QualityCode.Good, result.getResultQuality());
         assertEquals(15, result.getReturnedSize());
 
-        for (var item : result.getResults()) {
+        for (var item : Objects.requireNonNull(result.getResults())) {
             if(item.hasChildren()) {
                 // Element
                 assertEquals(item.getPath(), item.getDisplayPath());

@@ -6,6 +6,7 @@ import com.inductiveautomation.ignition.common.gson.JsonObject;
 import com.inductiveautomation.ignition.common.gson.JsonParser;
 import com.inductiveautomation.ignition.common.gson.annotations.SerializedName;
 import com.unsautomation.ignition.piintegration.piwebapi.ApiException;
+import org.apache.http.NameValuePair;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.impl.client.BasicResponseHandler;
 import org.apache.http.util.EntityUtils;
@@ -19,7 +20,7 @@ import java.util.stream.Collectors;
 
 public class PIResponse {
     @SerializedName("Status")
-    private Integer status;
+    private final Integer status;
 
     @SerializedName("Headers")
     private Map<String, String> headers;
@@ -28,8 +29,6 @@ public class PIResponse {
     private JsonObject content;
 
     public PIResponse(CloseableHttpResponse response) throws ApiException {
-
-
         var c = "";
         try {
             c = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8.name());
@@ -38,16 +37,16 @@ public class PIResponse {
         }
         this.status = response.getStatusLine().getStatusCode();
         headers = Arrays.stream(response.getAllHeaders()).collect(Collectors
-                .toMap(k-> k.getName(), v -> v.getValue()));
+                .toMap(NameValuePair::getName, NameValuePair::getValue));
         checkHttpSuccess();
         content = (new JsonParser()).parse(c).getAsJsonObject();
     }
 
     /**
      * Used for simulation mostly
-     * @param status
-     * @param content
-     * @throws ApiException
+     * @param status The HTTP Status code
+     * @param content the JSON Http Body
+     * @throws ApiException If HTTP Status not ok
      */
     public PIResponse(Integer status, JsonObject content) throws ApiException {
         this.status = status;
@@ -60,11 +59,11 @@ public class PIResponse {
             throw new ApiException(status, "Invalid response from PI");
         }
     }
-    private void setStatus(Integer status) { this.status = status;}
+ //   private void setStatus(Integer status) { this.status = status;}
 
-    public Integer getStatus() { return this.status;}
+    //public Integer getStatus() { return this.status;}
 
-    private void setHeaders(Map<String, String> headers) { this.headers = headers;}
+    //private void setHeaders(Map<String, String> headers) { this.headers = headers;}
 
     public Map<String, String> getHeaders() { return this.headers;}
 
