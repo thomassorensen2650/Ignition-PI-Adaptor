@@ -1,0 +1,1 @@
+java -jar module-signer.jar -keystore=./keystore.jks -keystore-pwd=Lort123! -alias=thomas -alias-pwd=Lort123! -chain=./thomas.p7b -module-in=./Integration-PI-build/target/PI-Historian-unsigned.modl -module-out=./PI-Historian-signed-module.modl
