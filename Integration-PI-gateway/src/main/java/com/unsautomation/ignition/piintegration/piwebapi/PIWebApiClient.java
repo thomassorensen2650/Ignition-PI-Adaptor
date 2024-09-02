@@ -35,4 +35,6 @@ public class PIWebApiClient {
     }
 
     public PointApi getPoint() {return new PointApi(apiClient);}
+
+    public AttributeApi getAttribute() {return new AttributeApi(apiClient);}
 }

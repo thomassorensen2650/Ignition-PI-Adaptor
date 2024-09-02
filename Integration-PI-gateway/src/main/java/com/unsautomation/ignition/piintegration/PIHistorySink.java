@@ -66,7 +66,7 @@ public class PIHistorySink implements DataSink {
                 return false;
             }
         } catch (ApiException ex) {
-            logger.error("Unable to get Data Archiver Status", ex);
+            logger.trace("Unable to get Data Archiver Status", ex);
             return false;
         }
     }

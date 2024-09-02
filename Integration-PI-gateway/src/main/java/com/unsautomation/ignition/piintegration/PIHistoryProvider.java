@@ -393,8 +393,10 @@ public class PIHistoryProvider implements TagHistoryProvider {
         return new TimelineSet(timelines);
     }
 
-    @Override
+    /*@Override
     public List<Annotation> queryAnnotations(List<QualifiedPath> paths, Date start, Date end, TypeFilter filter, String queryId) throws Exception {
+        return null;
+
         var a = new Annotation();
 
         var x = a.newBuilder().data("Hello World")
@@ -406,5 +408,5 @@ public class PIHistoryProvider implements TagHistoryProvider {
         var v = new ArrayList<Annotation>();
         v.add(x);
         return v;
-    }
+    }*/
 }
