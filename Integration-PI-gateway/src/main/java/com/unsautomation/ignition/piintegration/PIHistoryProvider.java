@@ -159,9 +159,9 @@ public class PIHistoryProvider implements TagHistoryProvider {
             // Path should be WebID
             // TODO: Find a better solution, need to dig a bit deeper into the Igniton SDK.
             var tagName = item.getAsJsonObject().get("Name").getAsString(); //
-            var displayName = hasChildren ? tagName : tagName.replaceAll("[^A-Za-z0-9._'\\-:()]", ":");
-            final var name = hasChildren ? displayName : item.getAsJsonObject().get("WebId").getAsString();
-            final var validIgnName = displayName.matches("^[\\p{L}\\d][\\p{L}\\d_'-:()\\s]*$");
+            // var displayName = hasChildren ? tagName : tagName.replaceAll("[^A-Za-z0-9._'\\-:()]", ":");
+            //final var name = hasChildren ? displayName : item.getAsJsonObject().get("WebId").getAsString();
+            final var validIgnName = tagName.matches("^[\\p{L}\\d][\\p{L}\\d_'-:()\\s]*$");
 
             if (validIgnName) {
                 var tr = new TagResult();
@@ -170,10 +170,10 @@ public class PIHistoryProvider implements TagHistoryProvider {
                         .setTag(tagPath + "/" + name).build();
                 tr.setHasChildren(hasChildren);
                 tr.setPath(p);
-                var dp = new QualifiedPath.Builder()
-                            .set(WellKnownPathTypes.HistoryProvider, histProvider)
-                            .setTag(tagPath + "/" + displayName).build();
-                tr.setDisplayPath(dp);
+                //var dp = new QualifiedPath.Builder()
+                //            .set(WellKnownPathTypes.HistoryProvider, histProvider)
+                //            .setTag(tagPath + "/" + tagName).build();
+                //tr.setDisplayPath(dp);
                 tr.setType(WellKnownPathTypes.Tag);
                 list.add(tr);
             } else {
@@ -198,7 +198,7 @@ public class PIHistoryProvider implements TagHistoryProvider {
         assets.setHasChildren(true);
         assets.setPath(p);
         list.add(assets);
-
+/** Why spend time on points.. Too many problems, and people innovative enough to use Ignition dont use PI Points.´.....
         var points = new TagResult();
         var p2 = new QualifiedPath.Builder()
                 .set(WellKnownPathTypes.HistoryProvider, histProv)
@@ -209,7 +209,7 @@ public class PIHistoryProvider implements TagHistoryProvider {
         points.setHasChildren(true);
         points.setPath(p2);
         list.add(points);
-
+ */
         return list;
     }
 
