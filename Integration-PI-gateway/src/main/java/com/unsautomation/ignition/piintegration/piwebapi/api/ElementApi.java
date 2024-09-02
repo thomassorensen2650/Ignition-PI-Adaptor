@@ -39,4 +39,9 @@ public class ElementApi {
         var url = String.format("elements/%s/attributes",elementWebId);
         return client.doGet(url).getContent().getAsJsonObject().get("Items").getAsJsonArray();
     }
+    
+    public Boolean elementNameValid(String elementName) {
+        var regex = "^[^\\*\\?\\;\\{\\}\\[\\]\\|\\\\\\`\\'\\\"]{1,259}$";
+        return elementName.matches(regex);
+    }
 }

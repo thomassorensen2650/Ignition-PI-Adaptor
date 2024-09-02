@@ -26,6 +26,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Responsible for actually querying the data from PI. The query controller
@@ -41,16 +42,19 @@ public class PIQueryExecutor  implements HistoryQueryExecutor {
     private final PIHistoryProviderSettings settings; // Holds the settings for the current provider, needed to connect to ADX
     private final QueryController controller; // Holds the settings for what the user wants to query
     private final List<ColumnQueryDefinition> paths; // Holds the definition of each tag
-    protected final List<DelegatingHistoryNode> nodes = new ArrayList();
-    protected List<ProcessedHistoryColumn> tags;
+    protected final List<DelegatingHistoryNode> nodes = new ArrayList<>();
+    protected List<ProcessedHistoryColumn> tags = new ArrayList<>();
     protected JsonArray queryResult;
 
-    private PIWebApiClient piClient; // A client for querying data
+    private final PIWebApiClient piClient; // A client for querying data
 
     boolean processed = false;
     long maxTSInData = -1;
 
-    public PIQueryExecutor(PIWebApiClient client, GatewayContext context, PIHistoryProviderSettings settings, List<ColumnQueryDefinition> tagDefs, QueryController controller) throws URISyntaxException {
+    public PIQueryExecutor(PIWebApiClient client, GatewayContext context, PIHistoryProviderSettings settings, List<ColumnQueryDefinition> tagDefs, QueryController controller) throws URISyntaxException, ApiException {
+
+        logger.debug("PIQueryExecutor(PIWebApiClient, GatewayContext, PIHistoryProviderSettings, List<ColumnQueryDefinition> tagDefs) called.  tagDefs: {}", tagDefs.toString());
+
         this.context = context;
         this.settings = settings;
         this.controller = controller;
@@ -77,15 +81,32 @@ public class PIQueryExecutor  implements HistoryQueryExecutor {
 
             if (StringUtils.isBlank(tagPath)) {
                 var historyTag = new ErrorHistoryColumn(c.getColumnName(), DataTypeClass.Integer, QualityCode.Error_Configuration);
-                logger.error(controller.getQueryId() + ": The item path '" + c.getPath() + "' does not have a valid tag path component.");
+                logger.error("{}: The item path '{}' does not have a valid tag path component.", controller.getQueryId(), c.getPath());
             } else {
                 var historyTag = new ProcessedHistoryColumn(c.getColumnName(), isRaw);
                 var tagParts = tagPath.split("/");
                 var webId = tagParts[tagParts.length-1];
-                var dt = piClient.getPoint()
+                var pointType = tagParts[0];
+
+                var dt = "";
+                switch (pointType) {
+                    case "Assets":
+                       dt = piClient.getAttribute()// AF Element Attribute
+                               .get(webId)
+                               .get("Type")
+                               .getAsString();
+                       break;
+                    case "Point":
+                        dt = piClient.getPoint() // PI Point
                                 .get(webId)
                                 .get("PointType")
                                 .getAsString();
+                        break;
+                    default:
+                        logger.error("Unknown Data Type:{}", dt);
+                        return;
+                }
+
                 switch (dt) {
                     case "Digital":
                     case "String":
@@ -106,7 +127,7 @@ public class PIQueryExecutor  implements HistoryQueryExecutor {
                         break;
                     default:
                         historyTag.setDataType(DataTypeClass.Float);
-                        logger.warn("Unknown DataType:" + dt);
+                        logger.warn("Unknown DataType:{}", dt);
                 }
                 tags.add(historyTag);
             }
@@ -118,7 +139,7 @@ public class PIQueryExecutor  implements HistoryQueryExecutor {
      */
     @Override
     public List<? extends HistoryNode> getColumnNodes() {
-        return new ArrayList<HistoryNode>(tags);
+        return tags;
     }
 
     /**
@@ -144,8 +165,7 @@ public class PIQueryExecutor  implements HistoryQueryExecutor {
         var startDate = controller.getQueryParameters().getStartDate();
         var endDate = controller.getQueryParameters().getEndDate();
 
-        logger.debug("startReading(blockSize, startDate, endDate) called.  blockSize: " + blockSize
-                + ", startDate: " + startDate.toString() + ", endDate: " + endDate.toString() + " pathSize:" + paths.size());
+        logger.debug("startReading(blockSize, startDate, endDate) called.  blockSize: {}, startDate: {}, endDate: {} pathSize:{}", blockSize, startDate.toString(), endDate.toString(), paths.size());
 
         // TODO: Should be wrapped in PI BatchRequest to save PI web api "server round trips" if more than one reading
         for (int i = 0; i < paths.size() ; i++) {

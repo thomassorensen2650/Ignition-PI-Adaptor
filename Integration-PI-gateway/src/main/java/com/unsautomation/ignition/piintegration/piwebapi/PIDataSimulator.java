@@ -54,8 +54,14 @@ public class PIDataSimulator {
     public JsonObject getElements(int count) {
         return null;
     }
+
     public JsonObject getAttributes(int count) {
-        return null;
+        var data = simulateWebApiItemsResponse(new String[] {"Name", "WebID"}, count);
+
+        for (JsonElement d : data.getAsJsonArray("Items")) {
+            d.getAsJsonObject().addProperty("Type", "Float");
+        }
+        return data;
     }
 
     public JsonObject getPoints(int count) {

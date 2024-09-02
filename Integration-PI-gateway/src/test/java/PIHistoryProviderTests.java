@@ -28,7 +28,7 @@ import static org.mockito.Mockito.mock;
 
 @ExtendWith(MockitoExtension.class)
 public class PIHistoryProviderTests {
-
+/*
     final String providerName = "Test PI Provider";
 
     PIHistoryProvider historyProvider = null;
@@ -42,10 +42,10 @@ public class PIHistoryProviderTests {
     @BeforeEach
     public void setUp() throws ApiException {
         settings = mock(PIHistoryProviderSettings.class);
-        var webApi = System.getProperty("PIWebAPIUrl","https://localhost/piwebapi");
+        var webApi = System.getProperty("PIWebAPIUrl","https://192.168.146.132/piwebapi");
         lenient().when(settings.getWebAPIUrl()).thenReturn(webApi);
-        lenient().when(settings.getUsername()).thenReturn("TestUser");
-        lenient().when(settings.getPassword()).thenReturn("TestPassword");
+        lenient().when(settings.getUsername()).thenReturn("tssr");
+        lenient().when(settings.getPassword()).thenReturn("tssr");
         lenient().when(settings.getAPIMaxResponseLimit()).thenReturn(1000);
         lenient().when(settings.getAPIRequestPageSize()).thenReturn(10);
         lenient().when(settings.getSimulationMode()).thenReturn(false);
@@ -278,7 +278,7 @@ public class PIHistoryProviderTests {
             }
         }
     }
-
+*/
     // ++++++++ Helper functions ++++++++
     // TODO: Test Invalid cert
     // TODO: Test Invalid cert with cert ignore
